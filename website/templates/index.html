@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle robot banane</title>
+    <link rel="stylesheet" href="../styles/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="subcontainer">
+            
+            <div class="left-panel">
+                
+                <div class="controls-section">
+                    <h3>controls manuels</h3>
+                    <div class="pad">
+                        <button id="up" class="control-btn direction">Haut</button>
+                        <button id="left" class="control-btn direction">Gauche</button>
+                        <button id="right" class="control-btn direction">Droite</button>
+                        <button id="down" class="control-btn direction">Bas</button>
+                    </div>
+                </div>
+
+                <div class="objects-section">
+                    <h3>Cibles</h3>
+                    <div class="object-grid">
+                        <button class="control-btn object" data-target="tasse">Tasse</button>
+                        <button class="control-btn object" data-target="voiture">Voiture</button>
+                        <button class="control-btn object" data-target="banane">Banane</button>
+                        <button class="control-btn object" data-target="teddy">Teddy Bear</button>
+                        <button class="control-btn object" data-target="brosse">Brosse à dent</button>
+                        <button class="control-btn object" data-target="personne">Personne</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="right-panel">
+                <h3>camera</h3>
+                <div class="camera-feed">
+                    <img id="main-image" src="https://via.placeholder.com/800x600?text=Flux+Cam%C3%A9ra" alt="Vue du robot">
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-panel">
+            <h3>Contrat</h3>
+            <div id="target-queue" class="queue-container">
+                </div>
+        </div>
+    </div>
+
+    <script src="../scripts/script.js"></script>
+</body>
+</html>
