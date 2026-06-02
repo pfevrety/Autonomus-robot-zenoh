@@ -8,9 +8,6 @@ import numpy as np
 from ultralytics import YOLO
 from collections import deque
 
-stack = deque()
-
-
 parser = argparse.ArgumentParser(
     prog="detect", description="zenoh object detection example"
 )
@@ -125,13 +122,6 @@ while True:
                         json.dumps(list_objects[-1]),
                     )
                     i += 1
-        stack.append(list_objects)
-        if len(stack) > 10:
-            stack.popleft()
-            z.put(
-                "{}/stack/{}".format(args.prefix, cam),
-                json.dumps(list_objects),
-            )
 
     time.sleep(args.delay)
 

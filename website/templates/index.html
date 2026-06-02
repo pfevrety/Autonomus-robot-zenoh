@@ -28,11 +28,14 @@
                         <button class="control-btn object" data-target="tasse">Tasse</button>
                         <button class="control-btn object" data-target="voiture">Voiture</button>
                         <button class="control-btn object" data-target="banane">Banane</button>
-                        <button class="control-btn object" data-target="teddy">Teddy Bear</button>
-                        <button class="control-btn object" data-target="brosse">Brosse à dent</button>
+                        <button class="control-btn object" data-target="teddy">Teddy_Bear</button>
+                        <button class="control-btn object" data-target="brosse">Brosse_à_dent</button>
                         <button class="control-btn object" data-target="personne">Personne</button>
                     </div>
                 </div>
+
+                <input type="text" id="console-input" class="console-input" placeholder="séquence manuelle">
+
 
             </div>
 
@@ -44,11 +47,21 @@
             </div>
 
         </div>
-
         <div class="bottom-panel">
-            <h3>Contrat</h3>
-            <div id="target-queue" class="queue-container">
+            <div class="queue-panel">
+                <div class="bottom-header">
+                    <h3>Contrat</h3>
+                    <button id="clear-queue" class="control-btn clear-btn">Effacer</button>
                 </div>
+                
+                <div id="target-queue" class="queue-container">
+                </div>
+            </div>
+            <div class="log-panel">
+                <h3>Logs système</h3>
+                <div id="log-container" class="log-container">
+                </div>
+            </div>
         </div>
     </div>
 

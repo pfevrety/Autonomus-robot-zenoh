@@ -21,6 +21,75 @@ directionButtons.forEach(button => {
     });
 });
 
+// cibles et file d'attente
+const queueContainer = document.getElementById('target-queue');
+const objectButtons = document.querySelectorAll('.object');
+
+const validTargets = {
+    'tasse': 'Tasse',
+    'voiture': 'Voiture',
+    'banane': 'Banane',
+    'teddy': 'Teddy Bear',
+    'brosse': 'Brosse à dent',
+    'personne': 'Personne'
+};
+
+function addToQueue(targetKey, displayName) {
+    const queueItem = document.createElement('div');
+    queueItem.classList.add('queue-item');
+    queueItem.textContent = displayName; 
+    queueContainer.appendChild(queueItem);
+}
+
+objectButtons.forEach(button => {
+    button.addEventListener('click', (event) => {
+        const targetObject = event.target.getAttribute('data-target');
+        const targetName = event.target.innerText; 
+        addToQueue(targetObject, targetName);
+    });
+});
+
+const clearBtn = document.getElementById('clear-queue');
+clearBtn.addEventListener('click', () => {
+    queueContainer.innerHTML = ''; 
+});
+
+// console textuelle
+const consoleInput = document.getElementById('console-input');
+consoleInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        
+        const text = consoleInput.value.trim().toLowerCase();
+        if (!text) return; 
+
+        const words = text.split(/\s+/); 
+        
+        words.forEach(word => {
+            addToQueue(word, word);
+            
+        });
+        consoleInput.value = '';
+    }
+});
+
+
+
+function addLog(message, type = 'info') {
+    const logContainer = document.getElementById('log-container');
+
+    const logEntry = document.createElement('div');
+    logEntry.classList.add('log-entry', `log-${type}`);
+
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('fr-FR', { hour12: false });
+
+    logEntry.textContent = `[${timeString}] ${message}`;
+
+    logContainer.appendChild(logEntry);
+
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
 
 // Gestion des contrôles au clavier
 document.addEventListener('keydown', (event) => {

@@ -59,7 +59,7 @@ def display_video_stream():
                 npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
                 matImage = cv2.imdecode(npImage, 1)
                 if "stack" in cams[cam]:
-                    print("Stack for cam {}: {}".format(cam, cams[cam]["stack"]))
+                    print("Stack for cam {}: {}".format(cam, len(cams[cam]["stack"])))
                 if "objects" in cams[cam]:
                     for obj in list(cams[cam]["objects"]):
                         if cams[cam]["objects"][obj]["time"] > now - 0.2:
