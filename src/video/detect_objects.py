@@ -65,7 +65,8 @@ if args.listen is not None:
 
 qcd = cv2.QRCodeDetector()
 cams = {}
-history = {}
+history_conf = {}
+history_center = {}
 model = YOLO("yolo26" + args.model_size + ".pt")
 
 
@@ -82,12 +83,40 @@ def frames_listener(sample):
 def smooth_detection(object_name, confidence):
     key = object_name
 
-    if key not in history:
-        history[key] = deque(maxlen=10)
+    if key not in history_conf:
+        history_conf[key] = deque(maxlen=10)
 
-    history[key].append(confidence)
+    history_conf[key].append(confidence)
 
-    return median(history[key])
+    return median(history_conf[key])
+
+def smooth_center_quadratic(object_name, center, confidence):
+    if object_name not in history_center:
+        history_center[object_name] = deque(maxlen=10)
+
+    history_center[object_name].append((center[0], center[1], confidence))
+
+    points = list(history_center[object_name])
+
+    weighted_x = 0
+    weighted_y = 0
+    total_weight = 0
+
+    for i, (x, y, conf) in enumerate(points):
+        time_weight = (i + 1) ** 2
+        weight = time_weight * conf
+
+        weighted_x += x * weight
+        weighted_y += y * weight
+        total_weight += weight
+
+    if total_weight == 0:
+        return center
+
+    return [
+        int(weighted_x / total_weight),
+        int(weighted_y / total_weight)
+    ]
 
 print("[INFO] Open zenoh session...")
 
@@ -132,18 +161,25 @@ while True:
                         int((data[1] + data[3]) / 2),
                     ]
 
+                
+                    smoothed_center = smooth_center_quadratic(
+                        object_name,
+                        center,
+                        smoothed_confidence
+                    )
                     hauteur, largeur = matImage.shape[:2]
                     z.put(
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
                         json.dumps(
                             {
-                                "name": result.names[int(data[5])],
+                                "name": object_name,
                                 "confiance": int(smoothed_confidence* 100),
                                 "box": box,
-                                "center": center,
+                                "raw_center": center,
+                                "center": smoothed_center,
                                 "normalized_center": [
-                                    center[0] / largeur,
-                                    center[1] / hauteur,
+                                    smoothed_center[0] / largeur,
+                                    smoothed_center[1] / hauteur,
                                 ],
                             }
                         ),
