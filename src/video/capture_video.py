@@ -74,7 +74,7 @@ while True:
     # print('[DEBUG] Put frame: {}/cams/{}'.format(args.prefix, cam_id))
     z.put('{}/cams/{}'.format(args.prefix, cam_id), jpeg.tobytes())
 
-    time.sleep(args.delay)
+    # time.sleep(args.delay)
 
 vs.stop()
 z.close()
