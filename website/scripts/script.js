@@ -58,6 +58,7 @@ function addToQueue(targetKey, displayName) {
     
     queueContainer.appendChild(queueItem);
     addLog(`Cible ajoutée aux objectifs : ${displayName}`, 'info');
+        
 }
 
 objectButtons.forEach(button => {
@@ -65,6 +66,23 @@ objectButtons.forEach(button => {
         const targetObject = event.target.getAttribute('data-target');
         const targetName = event.target.innerText; 
         addToQueue(targetObject, targetName);
+
+        fetch('http://localhost:8000/add_aimed_object', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ object_name: targetObject })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Succès:', data);
+            addLog(`Backend a ajouté : ${targetName} à la liste des objets visés`, 'success');
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            addLog(`Échec ajout cible : ${targetName}`, 'error');
+        });
     });
 });
 
