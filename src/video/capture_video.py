@@ -5,6 +5,7 @@ import cv2
 import json
 import random
 import zenoh
+import numpy as np
 
 parser = argparse.ArgumentParser(
     prog='capture_video',
@@ -52,7 +53,9 @@ print('[INFO] Start video stream - Cam #{}'.format(cam_id))
 if picamera:
     import picamera2
     vs = picamera2.Picamera2()
-    vs.configure(vs.create_still_configuration({'format': 'XRGB8888'}))
+    # Let the camera hardware handle the resizing and use a faster video config
+    config = vs.create_video_configuration(main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB8888"})
+    vs.configure(config)
     vs.start()
 else:
     from imutils.video import VideoStream
@@ -62,7 +65,7 @@ time.sleep(1.0)
 
 while True:
     if picamera:
-        raw = vs.capture_array()
+        raw = np.flip(vs.capture_array(), axis=1)
     else:
         raw = vs.read()
     frame = imutils.resize(raw, width=args.width)
@@ -72,7 +75,7 @@ while True:
     # print('[DEBUG] Put frame: {}/cams/{}'.format(args.prefix, cam_id))
     z.put('{}/cams/{}'.format(args.prefix, cam_id), jpeg.tobytes())
 
-    time.sleep(args.delay)
+    # time.sleep(args.delay)
 
 vs.stop()
 z.close()

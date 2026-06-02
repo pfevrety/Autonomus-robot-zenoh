@@ -124,7 +124,7 @@ while True:
                     )
                     i += 1
 
-    time.sleep(args.delay)
+    # time.sleep(args.delay)
 
 vs.stop()
 z.close()

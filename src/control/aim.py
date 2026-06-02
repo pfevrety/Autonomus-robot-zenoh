@@ -6,17 +6,18 @@ import time
 
 class Aim:
     def __init__(
-        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=200.0
+        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=20.0
     ):
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
+        self.deadzone = 0.2
 
         conf = zenoh.Config()
 
         zenoh.init_log_from_env_or("error")
         self.session = zenoh.open(conf)
-        self.sub = self.session.declare_subscriber("**/objects/**", self.box_callback)
+        self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
         self.aimed = 0.5
         self.last_time = -2.0
 
@@ -38,9 +39,9 @@ class Aim:
         if time.time() - self.last_time > 0.4:
             return
 
-        if self.aimed > 0.55:
+        if self.aimed > 0.5 - self.deadzone / 2:
             self.pub_twist(0.0, 1.0 * self.angular_scale)
-        elif self.aimed < 0.45:
+        elif self.aimed < 0.5 + self.deadzone / 2:
             self.pub_twist(0.0, -1.0 * self.angular_scale)
         else:
             self.pub_twist(0.0, 0.0)
@@ -53,7 +54,7 @@ class Aim:
 print("Starting...")
 aim = Aim()
 try:
-    print("Started Successfully")
+    print("Started Aim Successfully")
     while True:
         aim.move()
         time.sleep(0.1)
