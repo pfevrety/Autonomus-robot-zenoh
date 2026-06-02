@@ -6,6 +6,8 @@ import random
 import zenoh
 import numpy as np
 from ultralytics import YOLO
+from collections import deque
+from statistics import median
 
 parser = argparse.ArgumentParser(
     prog="detect", description="zenoh object detection example"
@@ -63,6 +65,7 @@ if args.listen is not None:
 
 qcd = cv2.QRCodeDetector()
 cams = {}
+history = {}
 model = YOLO("yolo26" + args.model_size + ".pt")
 
 
@@ -76,6 +79,15 @@ def frames_listener(sample):
     cams[cam]["img"] = bytes(sample.payload)
     cams[cam]["img_time"] = time.time()
 
+def smooth_detection(object_name, confidence):
+    key = object_name
+
+    if key not in history:
+        history[key] = deque(maxlen=10)
+
+    history[key].append(confidence)
+
+    return median(history[key])
 
 print("[INFO] Open zenoh session...")
 
@@ -106,6 +118,15 @@ while True:
                         [int(data[2]), int(data[3])],
                         [int(data[0]), int(data[3])],
                     ]
+
+                    confidence = float(data[4])
+                    object_name = result.names[int(data[5])]
+
+                    smoothed_confidence = smooth_detection(
+                        object_name,
+                        confidence
+                    )
+
                     center = [
                         int((data[0] + data[2]) / 2),
                         int((data[1] + data[3]) / 2),
@@ -117,7 +138,7 @@ while True:
                         json.dumps(
                             {
                                 "name": result.names[int(data[5])],
-                                "confiance": int(float(data[4]) * 100),
+                                "confiance": int(smoothed_confidence* 100),
                                 "box": box,
                                 "center": center,
                                 "normalized_center": [
