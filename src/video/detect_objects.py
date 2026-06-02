@@ -67,11 +67,14 @@ model = YOLO("yolo26" + args.model_size + ".pt")
 
 
 def frames_listener(sample):
-    # print('[DEBUG] Received frame: {}'.format(sample.key_expr))
     chunks = str(sample.key_expr).split("/")
     cam = chunks[-1]
 
-    cams[cam] = bytes(sample.payload)
+    if cam not in cams:
+        cams[cam] = {}
+
+    cams[cam]["img"] = bytes(sample.payload)
+    cams[cam]["img_time"] = time.time()
 
 
 print("[INFO] Open zenoh session...")
@@ -83,9 +86,12 @@ print("[INFO] Start detection")
 sub = z.declare_subscriber(args.prefix + "/cams/*", frames_listener)
 
 while True:
+    now = time.time()
     for cam in list(cams):
+        if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
+            del cams[cam]
         print("[INFO] Processing frame from camera '{}'".format(cam))
-        npImage = np.frombuffer(cams[cam], dtype=np.uint8)
+        npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
 
         results = model.predict(source=matImage, show_boxes=True, verbose=False)

@@ -15,6 +15,7 @@ def frames_listener(sample):
     if cam not in cams:
         cams[cam] = {}
     cams[cam]["img"] = bytes(sample.payload)
+    cams[cam]["img_time"] = time.time()
 
 
 def stack_listener(sample):
@@ -56,6 +57,8 @@ def display_video_stream():
     while True:
         now = time.time()
         for cam in list(cams):
+            if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
+                del cams[cam]
             if "img" in cams[cam]:
                 npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
                 matImage = cv2.imdecode(npImage, 1)
