@@ -44,7 +44,7 @@ parser.add_argument(
     help="The size of the model to use. Can be 'n', 's', 'm', 'l' or 'x'.",
 )
 parser.add_argument(
-    "-p", "--prefix", type=str, default="demo/obj-detect", help="resources prefix"
+    "-p", "--prefix", type=str, default="robot", help="resources prefix"
 )
 parser.add_argument(
     "-c", "--config", type=str, metavar="FILE", help="A zenoh configuration file."
@@ -108,11 +108,12 @@ while True:
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
                         json.dumps(
                             {
-                                "info": result.names[int(data[5])],
+                                "detected_object": True
+                                "name": result.names[int(data[5])],
                                 "confiance": int(float(data[4]) * 100),
                                 "box": box,
                                 "center": center,
-                                "normalize_center": [
+                                "normalized_center": [
                                     center[0] / largeur,
                                     center[1] / hauteur,
                                 ],
