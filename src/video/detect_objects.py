@@ -84,6 +84,7 @@ sub = z.declare_subscriber(args.prefix + "/cams/*", frames_listener)
 
 while True:
     for cam in list(cams):
+        print("[INFO] Processing frame from camera '{}'".format(cam))
         npImage = np.frombuffer(cams[cam], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
 
@@ -108,11 +109,11 @@ while True:
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
                         json.dumps(
                             {
-                                "info": result.names[int(data[5])],
+                                "name": result.names[int(data[5])],
                                 "confiance": int(float(data[4]) * 100),
                                 "box": box,
                                 "center": center,
-                                "normalize_center": [
+                                "normalized_center": [
                                     center[0] / largeur,
                                     center[1] / hauteur,
                                 ],
