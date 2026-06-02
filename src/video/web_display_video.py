@@ -55,7 +55,10 @@ def display_video_stream():
 
                             cv2.putText(
                                 matImage,
-                                cams[cam]["objects"][obj]["info"],
+                                cams[cam]["objects"][obj]["info"]
+                                + ", "
+                                + str(cams[cam]["objects"][obj]["confiance"])
+                                + "%",
                                 np.array(cams[cam]["objects"][obj]["box"][0]).astype(
                                     int
                                 ),
@@ -75,12 +78,13 @@ def display_video_stream():
                                 (255, 0, 0),
                                 2,
                             )
-
                             cv2.putText(
                                 matImage,
-                                np.array(cams[cam]["objects"][obj]["center"])
-                                .astype(int)
-                                .tolist(),  # normaliser par rapport à la taille de l'image ?
+                                str(
+                                    np.array(
+                                        cams[cam]["objects"][obj]["normalize_center"]
+                                    )
+                                ),
                                 np.array(cams[cam]["objects"][obj]["center"]).astype(
                                     int
                                 ),

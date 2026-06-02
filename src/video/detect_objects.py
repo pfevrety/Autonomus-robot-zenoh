@@ -98,9 +98,26 @@ while True:
                         [int(data[2]), int(data[3])],
                         [int(data[0]), int(data[3])],
                     ]
+                    center = [
+                        int((data[0] + data[2]) / 2),
+                        int((data[1] + data[3]) / 2),
+                    ]
+
+                    hauteur, largeur = matImage.shape[:2]
                     z.put(
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
-                        json.dumps({"info": result.names[int(data[5])], "box": box}),
+                        json.dumps(
+                            {
+                                "info": result.names[int(data[5])],
+                                "confiance": int(float(data[4]) * 100),
+                                "box": box,
+                                "center": center,
+                                "normalize_center": [
+                                    center[0] / largeur,
+                                    center[1] / hauteur,
+                                ],
+                            }
+                        ),
                     )
                     i += 1
 
