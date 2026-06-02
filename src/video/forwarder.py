@@ -31,7 +31,7 @@ aim = Aim()
 try:
     print("Started Forwarder Successfully")
     while True:
-        time.sleep(1)
+        time.sleep(0.01)
 except KeyboardInterrupt:
     print("Shutting down...")
 finally:
