@@ -18,8 +18,10 @@ class Aim:
         self.session = zenoh.open(conf)
         self.sub = self.session.declare_subscriber("robot/objects/**", self.box_callback)
         self.aimed = 0.5
+        self.last_time = -2.0
 
     def box_callback(self, sample: zenoh.Sample):
+        self.last_time = time.time()
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")
 
@@ -34,6 +36,9 @@ class Aim:
         self.session.put(self.cmd_vel_topic, t.serialize())
 
     def move(self):
+        if time.time() - self.last_time > 0.4:
+            return
+
         if self.aimed > 0.55:
             self.pub_twist(0.0, -1.0 * self.angular_scale)
         elif self.aimed < 0.45:
