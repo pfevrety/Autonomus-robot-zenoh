@@ -36,7 +36,7 @@ class Log(IdlStruct, typename="Log"):
 
 class TeleopManager:
     def __init__(
-        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=2.0, angular_scale=2.0
+        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=200.0
     ):
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale

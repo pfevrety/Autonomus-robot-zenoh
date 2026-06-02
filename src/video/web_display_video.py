@@ -90,7 +90,7 @@ def display_video_stream():
                                 ),
                                 cv2.FONT_HERSHEY_SIMPLEX,
                                 0.6,
-                                (255, 0, 0),
+                                (0, 255, 0),
                                 2,
                             )
                             cv2.circle(
