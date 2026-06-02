@@ -1,67 +1,118 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="h-full bg-slate-950 selection:bg-cyan-500 selection:text-slate-900">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle robot banane</title>
-    <link rel="stylesheet" href="../styles/style.css">
+    <title>Contrôle Robot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+        
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.9) translateY(4px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .animate-pop-in { animation: popIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="subcontainer">
+<body class="min-h-full text-slate-100 p-4 md:p-8 flex flex-col justify-center">
+
+    <div class="max-w-7xl mx-auto w-full space-y-6">
+        
+        <header class="flex items-center gap-3 border-b border-slate-800 pb-4">
+            <div class="h-3 w-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.5)]"></div>
+            <h1 class="text-sm font-mono tracking-widest text-slate-400 uppercase font-bold">Robot Control Station // <span class="text-yellow-400 font-extrabold">Banane v2.0</span></h1>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
-            <div class="left-panel">
+            <div class="lg:col-span-4 flex flex-col gap-6">
                 
-                <div class="controls-section">
-                    <h3>controls manuels</h3>
-                    <div class="pad">
-                        <button id="up" class="control-btn direction">Haut</button>
-                        <button id="left" class="control-btn direction">Gauche</button>
-                        <button id="right" class="control-btn direction">Droite</button>
-                        <button id="down" class="control-btn direction">Bas</button>
+                <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+                    <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Contrôles Manuels</h3>
+                    
+                    <div class="grid grid-cols-3 gap-2.5 max-w-[240px] mx-auto w-full aspect-square justify-center items-center my-2">
+                        <div></div>
+                        <button id="up" class="control-btn direction h-16 w-16 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center col-start-2 row-start-1">▲</button>
+                        <div></div>
+                        <button id="left" class="control-btn direction h-16 w-16 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center col-start-1 row-start-2">◀</button>
+                        <div class="h-16 w-16 border border-slate-800/40 rounded-xl bg-slate-950/40 flex items-center justify-center text-slate-600 font-mono text-xs">PAD</div>
+                        <button id="right" class="control-btn direction h-16 w-16 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center col-start-3 row-start-2">▶</button>
+                        <div></div>
+                        <button id="down" class="control-btn direction h-16 w-16 bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all duration-150 flex items-center justify-center col-start-2 row-start-3">▼</button>
                     </div>
                 </div>
 
-                <div class="objects-section">
-                    <h3>Cibles</h3>
-                    <div class="object-grid">
-                        <button class="control-btn object" data-target="tasse">Tasse</button>
-                        <button class="control-btn object" data-target="voiture">Voiture</button>
-                        <button class="control-btn object" data-target="banane">Banane</button>
-                        <button class="control-btn object" data-target="teddy">Teddy_Bear</button>
-                        <button class="control-btn object" data-target="brosse">Brosse_à_dent</button>
-                        <button class="control-btn object" data-target="personne">Personne</button>
+                <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+                    <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Cibles</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="tasse">Tasse</button>
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="voiture">Voiture</button>
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="banane">Banane</button>
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="teddy">Teddy Bear</button>
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="brosse">Brosse à dent</button>
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="personne">Personne</button>
                     </div>
                 </div>
 
-                <input type="text" id="console-input" class="console-input" placeholder="séquence manuelle">
-
+                <input type="text" id="console-input" class="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 py-3 px-4 rounded-xl font-mono text-sm shadow-inner transition-all duration-200" placeholder="> entrer séquence manuelle...">
 
             </div>
 
-            <div class="right-panel">
-                <h3>camera</h3>
-                <div class="camera-feed">
-                    <img id="main-image" src="https://via.placeholder.com/800x600?text=Flux+Cam%C3%A9ra" alt="Vue du robot">
+            <div class="lg:col-span-8 flex flex-col">
+                <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 h-full">
+                    <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Camera Feed</h3>
+                    <div class="camera-feed bg-slate-950 border border-slate-800/80 rounded-xl overflow-hidden flex items-center justify-center relative min-h-[400px] lg:min-h-[500px] h-full shadow-inner group">
+                        <div class="absolute top-4 left-4 font-mono text-xs text-red-500 bg-black/40 px-2 py-1 rounded border border-red-500/20 flex items-center gap-1.5 z-10">
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> REC
+                        </div>
+                        <img id="main-image" src="https://via.placeholder.com/800x600?text=Flux+Cam%C3%A9ra" alt="Vue du robot" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                    </div>
                 </div>
             </div>
 
         </div>
-        <div class="bottom-panel">
-            <div class="queue-panel">
-                <div class="bottom-header">
-                    <h3>Contrat</h3>
-                    <button id="clear-queue" class="control-btn clear-btn">Effacer</button>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+                <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
+                    <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase">Objectifs</h3>
+                    <button id="clear-queue" class="py-1 px-3 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 hover:border-transparent text-xs font-mono uppercase font-bold rounded-md transition-all duration-200 active:scale-95">Effacer</button>
                 </div>
                 
-                <div id="target-queue" class="queue-container">
+                <div id="target-queue" class="queue-container flex flex-wrap gap-2 min-h-[45px] p-3 bg-slate-950/40 rounded-xl border border-slate-800/40 items-center">
+                    
+                    <div class="queue-item animate-pop-in bg-amber-900/40 text-amber-300 border border-amber-700/60 text-xs font-mono uppercase font-bold tracking-wider py-1.5 px-3 rounded-lg shadow-sm">Tasse</div>
+                
                 </div>
             </div>
-            <div class="log-panel">
-                <h3>Logs système</h3>
-                <div id="log-container" class="log-container">
+            
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Logs système</h3>
+                <div id="log-container" class="log-container custom-scrollbar bg-slate-950 border border-slate-950 rounded-xl p-4 h-40 overflow-y-auto font-mono text-xs flex flex-col gap-1.5 shadow-inner">
+                    <p class="text-slate-500 m-0"><span class="text-slate-600">[15:10:02]</span> INFO: Système initialisé.</p>
+                    <p class="text-emerald-400 m-0"><span class="text-slate-600">[15:10:45]</span> SUCCESS: Connexion établie avec le robot.</p>
+                    <p class="text-amber-400 m-0"><span class="text-slate-600">[15:11:12]</span> WARN: Latence réseau élevée.</p>
+                    <p class="text-rose-400 m-0"><span class="text-slate-600">[15:11:30]</span> ERROR: Object 'Banane' hors de portée.</p>
                 </div>
             </div>
+
         </div>
     </div>
 
