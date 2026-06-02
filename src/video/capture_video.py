@@ -86,6 +86,7 @@ z = zenoh.open(conf)
 print("[INFO] Start video stream - Cam #{}".format(cam_id))
 if picamera:
     import picamera2
+    from libcamera import Transform
     
     vs = picamera2.Picamera2()
     
@@ -94,7 +95,7 @@ if picamera:
     config = vs.create_video_configuration(
         main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB8888"},
         controls={"FrameRate": 90.0}, # Adjust based on your module (90 for v2, 120 for v3)
-        transform=picamera2.Transform(vflip=True) 
+        transform=Transform(vflip=True)
     )
     
     # Boost buffer count to prevent frame drops if Zenoh network I/O lags slightly
