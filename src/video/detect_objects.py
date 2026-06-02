@@ -85,6 +85,7 @@ sub = z.declare_subscriber(args.prefix + "/cams/*", frames_listener)
 
 while True:
     for cam in list(cams):
+        print("[INFO] Processing frame from camera '{}'".format(cam))
         npImage = np.frombuffer(cams[cam], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
         list_objects = []

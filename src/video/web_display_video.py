@@ -5,6 +5,7 @@ import zenoh
 import numpy as np
 
 conf = zenoh.Config()
+conf.insert_json5("connect/endpoints", json.dumps(["tcp/127.0.0.1:7447"]))
 cams = {}
 
 
@@ -66,7 +67,7 @@ def display_video_stream():
 
                             cv2.putText(
                                 matImage,
-                                cams[cam]["objects"][obj]["info"]
+                                cams[cam]["objects"][obj]["name"]
                                 + ", "
                                 + str(cams[cam]["objects"][obj]["confiance"])
                                 + "%",
@@ -93,7 +94,7 @@ def display_video_stream():
                                 matImage,
                                 str(
                                     np.array(
-                                        cams[cam]["objects"][obj]["normalize_center"]
+                                        cams[cam]["objects"][obj]["normalized_center"]
                                     )
                                 ),
                                 np.array(cams[cam]["objects"][obj]["center"]).astype(
