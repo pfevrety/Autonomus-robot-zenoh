@@ -90,6 +90,22 @@ const clearBtn = document.getElementById('clear-queue');
 clearBtn.addEventListener('click', () => {
     queueContainer.innerHTML = ''; 
     addLog('File d\'objectifs réinitialisée', 'warning');
+
+    fetch('http://localhost:8000/clear_aimed_objects', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Succès:', data);
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        addLog('Échec réinitialisation liste backend', 'error');
+    });     
+
 });
 
 const consoleInput = document.getElementById('console-input');

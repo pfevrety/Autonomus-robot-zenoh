@@ -23,6 +23,16 @@ class Aim:
             self.aimed_object_list.append(object_name)
             print(f"Added {object_name} to aimed objects list")
 
+    def remove_aimed_object(self, object_name):
+        if object_name in self.aimed_object_list:
+            self.aimed_object_list.remove(object_name)
+            print(f"Removed {object_name} from aimed objects list")
+    
+    def remove_all_aimed_objects(self):
+        self.aimed_object_list.clear()
+        print("Cleared all aimed objects from the list")
+        
+
     def destroy(self):
         self.sub.undeclare()
         self.session.close()
