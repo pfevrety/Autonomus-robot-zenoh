@@ -90,6 +90,7 @@ while True:
     for cam in list(cams):
         if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
             del cams[cam]
+    for cam in list(cams):
         print("[INFO] Processing frame from camera '{}'".format(cam))
         npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
