@@ -16,7 +16,7 @@ class Aim:
 
         zenoh.init_log_from_env_or("error")
         self.session = zenoh.open(conf)
-        self.sub = self.session.declare_subscriber("**/objects/**", self.box_callback)
+        self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
         self.aimed = 0.5
         self.last_time = -2.0
 
