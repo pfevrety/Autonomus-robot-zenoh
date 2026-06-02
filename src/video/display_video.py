@@ -98,11 +98,13 @@ while True:
             npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
             matImage = cv2.imdecode(npImage, 1)
             if "objects" in cams[cam]:
+                print(len(cams[cam]["objects"]))
                 for obj in cams[cam]["objects"]:
+
                     if cams[cam]["objects"][obj]["time"] > now - 0.2:
                         cv2.putText(
                             matImage,
-                            cams[cam]["objects"][obj]["info"],
+                            cams[cam]["objects"][obj]["name"],
                             np.array(cams[cam]["objects"][obj]["box"][0]).astype(int),
                             cv2.FONT_HERSHEY_SIMPLEX,
                             0.6,

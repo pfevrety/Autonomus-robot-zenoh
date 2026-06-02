@@ -44,7 +44,7 @@ parser.add_argument(
     help="The size of the model to use. Can be 'n', 's', 'm', 'l' or 'x'.",
 )
 parser.add_argument(
-    "-p", "--prefix", type=str, default="robot", help="resources prefix"
+    "-p", "--prefix", type=str, default="demo/obj-detect", help="resources prefix"
 )
 parser.add_argument(
     "-c", "--config", type=str, metavar="FILE", help="A zenoh configuration file."
@@ -84,6 +84,7 @@ sub = z.declare_subscriber(args.prefix + "/cams/*", frames_listener)
 
 while True:
     for cam in list(cams):
+        print("[INFO] Processing frame from camera '{}'".format(cam))
         npImage = np.frombuffer(cams[cam], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
 

@@ -23,7 +23,13 @@ async def lifespan(app: FastAPI):
     global process_detection
 
     print("[INFO] subprocess detect_objects.py started...")
-    process_detection = subprocess.Popen(["python", "./src/video/detect_objects.py"])
+    # process_detection = subprocess.Popen(
+    #     [
+    #         "python",
+    #         "./src/video/detect_objects.py -e tcp/127.0.0.1:7447",
+    #     ],
+    #     shell=True,
+    # )
 
     yield
 
