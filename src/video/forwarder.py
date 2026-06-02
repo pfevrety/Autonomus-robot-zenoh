@@ -18,6 +18,7 @@ class Aim:
         self.last_time = time.time()
         data = json.loads(sample.payload.to_bytes())
         if data.get("name") == self.aimed_object_name:
+            print("Forwarding")
             self.session.put("robot/aimed", sample.payload)
 
     def destroy(self):
@@ -28,9 +29,9 @@ class Aim:
 print("Starting...")
 aim = Aim()
 try:
-    print("Started Successfully")
+    print("Started Forwarder Successfully")
     while True:
-        time.sleep(0.1)
+        time.sleep(1)
 except KeyboardInterrupt:
     print("Shutting down...")
 finally:

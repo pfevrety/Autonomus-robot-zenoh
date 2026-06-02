@@ -53,10 +53,10 @@ class Aim:
 print("Starting...")
 aim = Aim()
 try:
-    print("Started Successfully")
+    print("Started Aim Successfully")
     while True:
         aim.move()
-        time.sleep(0.1)
+        time.sleep(0.01)
 except KeyboardInterrupt:
     print("Shutting down...")
 finally:
