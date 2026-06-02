@@ -4,7 +4,7 @@ import time
 import io
 import zenoh
 import json
-from motor.servo import *
+from servo import *
 from pycdr2 import IdlStruct
 from pycdr2.types import int8, int32, uint32, float64
 
