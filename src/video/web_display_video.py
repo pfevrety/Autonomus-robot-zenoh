@@ -17,6 +17,14 @@ def frames_listener(sample):
     cams[cam]["img"] = bytes(sample.payload)
 
 
+def stack_listener(sample):
+    chunks = str(sample.key_expr).split("/")
+    cam = chunks[-1]
+    if cam not in cams:
+        cams[cam] = {}
+    cams[cam]["stack"] = json.loads(sample.payload.to_string())
+
+
 def objects_listener(sample):
     # print('[DEBUG] Received object: {} => {}'.format(sample.key_expr, sample.payload.decode("utf-8")))
     chunks = str(sample.key_expr).split("/")
@@ -40,6 +48,7 @@ zenoh.init_log_from_env_or("error")
 z = zenoh.open(conf)
 
 z.declare_subscriber("demo/obj-detect/cams/*", frames_listener)
+z.declare_subscriber("demo/obj-detect/stack/*", stack_listener)
 z.declare_subscriber("demo/obj-detect/objects/*/*", objects_listener)
 
 
@@ -50,6 +59,8 @@ def display_video_stream():
             if "img" in cams[cam]:
                 npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
                 matImage = cv2.imdecode(npImage, 1)
+                if "stack" in cams[cam]:
+                    print("Stack for cam {}: {}".format(cam, len(cams[cam]["stack"])))
                 if "objects" in cams[cam]:
                     for obj in list(cams[cam]["objects"]):
                         if cams[cam]["objects"][obj]["time"] > now - 0.2:

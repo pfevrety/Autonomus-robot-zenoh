@@ -5,24 +5,130 @@ const directionButtons = document.querySelectorAll('.direction');
 
 directionButtons.forEach(button => {
     button.addEventListener('click', (event) => {
-        const direction = event.target.innerText;
-        console.log(direction);
+
+        const buttonEl = event.target.closest('.direction');
+        const directionAttr = buttonEl.id; // Utilise 'up', 'down', 'left', 'right'
+        
+        console.log(`Direction demandée : ${directionAttr}`);
+        addLog(`Commande moteur : move_${directionAttr}`, 'info');
         
         fetch('http://localhost:8000/command', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ action: `move_${direction.toLowerCase()}` })
+            body: JSON.stringify({ action: `move_${directionAttr}` })
         })
         .then(response => response.json())
-        .then(data => console.log('Succès:', data))
-        .catch(error => console.error('Erreur:', error));
+        .then(data => {
+            console.log('Succès:', data);
+            addLog(`Robot a pivoté vers : ${directionAttr}`, 'success');
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            addLog(`Échec commande : ${directionAttr}`, 'error');
+        });
     });
 });
 
+const targetStyles = {
+    'tasse': "bg-amber-900/40 text-amber-300 border border-amber-700/60",
+    'voiture': "bg-slate-800/80 text-slate-200 border border-slate-600/60",
+    'banane': "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-yellow-500/5",
+    'teddy': "bg-orange-950/40 text-orange-400 border border-orange-800/60",
+    'brosse': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
+    'personne': "bg-purple-950/50 text-purple-300 border border-purple-800/60",
 
-// Gestion des contrôles au clavier
+    'default': "bg-slate-800 text-slate-400 border border-slate-700"
+};
+
+const queueContainer = document.getElementById('target-queue');
+const objectButtons = document.querySelectorAll('.object');
+
+
+function addToQueue(targetKey, displayName) {
+    const queueItem = document.createElement('div');
+    
+    let baseClasses = "queue-item animate-pop-in text-xs font-mono uppercase font-bold tracking-wider py-1.5 px-3 rounded-lg shadow-sm ";
+    
+    const specificStyle = targetStyles[targetKey.toLowerCase()] || targetStyles['default'];
+    
+    queueItem.className = baseClasses + specificStyle;
+    queueItem.textContent = displayName; 
+    
+    queueContainer.appendChild(queueItem);
+    addLog(`Cible ajoutée aux objectifs : ${displayName}`, 'info');
+}
+
+objectButtons.forEach(button => {
+    button.addEventListener('click', (event) => {
+        const targetObject = event.target.getAttribute('data-target');
+        const targetName = event.target.innerText; 
+        addToQueue(targetObject, targetName);
+    });
+});
+
+const clearBtn = document.getElementById('clear-queue');
+clearBtn.addEventListener('click', () => {
+    queueContainer.innerHTML = ''; 
+    addLog('File d\'objectifs réinitialisée', 'warning');
+});
+
+const consoleInput = document.getElementById('console-input');
+consoleInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        
+        const text = consoleInput.value.trim();
+        if (!text) return; 
+
+        const words = text.split(/\s+/); 
+        
+        words.forEach(word => {
+            const cleanWord = word.toLowerCase();
+
+            if (targetStyles[cleanWord]) {
+                addToQueue(cleanWord, word);
+            } else {
+                addToQueue('default', word);
+            }
+        });
+        consoleInput.value = '';
+    }
+});
+
+function addLog(message, type = 'info') {
+    const logContainer = document.getElementById('log-container');
+    const logEntry = document.createElement('p');
+    logEntry.className = "m-0";
+
+    switch(type) {
+        case 'success':
+            logEntry.classList.add('text-emerald-400');
+            break;
+        case 'warning':
+            logEntry.classList.add('text-amber-400');
+            break;
+        case 'error':
+            logEntry.classList.add('text-rose-400');
+            break;
+        case 'info':
+        default:
+            logEntry.classList.add('text-slate-500');
+            break;
+    }
+
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('fr-FR', { hour12: false });
+
+    logEntry.innerHTML = `<span class="text-slate-600">[${timeString}]</span> ${message}`;
+
+    logContainer.appendChild(logEntry);
+
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+
 document.addEventListener('keydown', (event) => {
     let buttonId = null;
 
@@ -37,7 +143,7 @@ document.addEventListener('keydown', (event) => {
         event.preventDefault(); 
         
         const btn = document.getElementById(buttonId);
-        btn.classList.add('keyboard-active'); 
+        btn.classList.add('scale-95', 'bg-blue-500'); 
         btn.click(); 
     }
 });
@@ -53,6 +159,8 @@ document.addEventListener('keyup', (event) => {
     }
 
     if (buttonId) {
-        document.getElementById(buttonId).classList.remove('keyboard-active');
+        const btn = document.getElementById(buttonId);
+        // Nettoie l'effet actif du clavier
+        btn.classList.remove('scale-95', 'bg-blue-500');
     }
 });

@@ -6,6 +6,7 @@ import random
 import zenoh
 import numpy as np
 from ultralytics import YOLO
+from collections import deque
 
 parser = argparse.ArgumentParser(
     prog="detect", description="zenoh object detection example"
@@ -87,7 +88,7 @@ while True:
         print("[INFO] Processing frame from camera '{}'".format(cam))
         npImage = np.frombuffer(cams[cam], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
-
+        list_objects = []
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
         for result in results:
@@ -105,20 +106,21 @@ while True:
                     ]
 
                     hauteur, largeur = matImage.shape[:2]
+                    list_objects.append(
+                        {
+                            "info": result.names[int(data[5])],
+                            "confiance": int(float(data[4]) * 100),
+                            "box": box,
+                            "center": center,
+                            "normalize_center": [
+                                center[0] / largeur,
+                                center[1] / hauteur,
+                            ],
+                        }
+                    )
                     z.put(
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
-                        json.dumps(
-                            {
-                                "name": result.names[int(data[5])],
-                                "confiance": int(float(data[4]) * 100),
-                                "box": box,
-                                "center": center,
-                                "normalized_center": [
-                                    center[0] / largeur,
-                                    center[1] / hauteur,
-                                ],
-                            }
-                        ),
+                        json.dumps(list_objects[-1]),
                     )
                     i += 1
 
