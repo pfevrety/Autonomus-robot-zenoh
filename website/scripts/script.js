@@ -20,10 +20,6 @@ directionButtons.forEach(button => {
             body: JSON.stringify({ action: `move_${directionAttr}` })
         })
         .then(response => response.json())
-        .then(data => {
-            console.log('Succès:', data);
-            addLog(`Robot a pivoté vers : ${directionAttr}`, 'success');
-        })
         .catch(error => {
             console.error('Erreur:', error);
             addLog(`Échec commande : ${directionAttr}`, 'error');

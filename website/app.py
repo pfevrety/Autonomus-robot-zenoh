@@ -14,28 +14,33 @@ from video.web_display_video import display_video_stream
 from control.web_teleop import TeleopManager
 
 # --- IMPORT AIM HERE ---
-# Adjust the import path depending on where aim.py is located. 
+# Adjust the import path depending on where aim.py is located.
 # If it's in the same directory, use: from aim import aim
-import video.forwarder
+# import video.forwarder
 process_detection = None
 teleop = TeleopManager()
-aim = video.forwarder.aim
+# aim = video.forwarder.aim
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global process_detection
 
     print("[INFO] subprocess detect_objects.py started...")
+    process_detection = subprocess.Popen(
+        ["python", "./src/video/detect_objects.py", "-e", "tcp/127.0.0.1:7447"],
+        shell=False,
+    )
 
     yield
 
     print("\n[INFO] stopping server")
-    
-    try:
-        aim.destroy()
-        print("[INFO] Zenoh subscriber destroyed safely.")
-    except Exception as e:
-        print(f"[ERROR] Failed to destroy Zenoh session: {e}")
+
+    # try:
+    #     aim.destroy()
+    #     print("[INFO] Zenoh subscriber destroyed safely.")
+    # except Exception as e:
+    #     print(f"[ERROR] Failed to destroy Zenoh session: {e}")
 
     if process_detection:
         process_detection.terminate()
@@ -52,6 +57,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/video_feed")
 def video_feed():
     print("[INFO] Client connected to video feed")
@@ -59,31 +65,34 @@ def video_feed():
         display_video_stream(), media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
+
 @app.post("/command")
 async def receive_command(request: Request):
     data = await request.json()
     action = data.get("action")
+    print(f"[INFO] Received command: {action}")
     teleop.handle_command(action)
     return {"status": "success", "action": action}
+
 
 app.mount("/scripts", StaticFiles(directory="website/scripts"), name="script")
 app.mount("/styles", StaticFiles(directory="website/styles"), name="style")
 
-@app.post("/add_aimed_object")
-async def add_aimed_object(request: Request):
-    data = await request.json()
-    object_name = data.get("object_name")
-    
-    if object_name:
-        aim.add_aimed_object(object_name)
-        return {"status": "success", "message": f"Added {object_name} to aimed objects list"}
-    else:
-        return {"status": "error", "message": "No object name provided"}
+# @app.post("/add_aimed_object")
+# async def add_aimed_object(request: Request):
+#     data = await request.json()
+#     object_name = data.get("object_name")
 
-@app.post("/clear_aimed_objects")
-async def clear_aimed_objects():
-    aim.remove_all_aimed_objects()
-    return {"status": "success", "message": "Cleared all aimed objects from the list"}
+#     if object_name:
+#         aim.add_aimed_object(object_name)
+#         return {"status": "success", "message": f"Added {object_name} to aimed objects list"}
+#     else:
+#         return {"status": "error", "message": "No object name provided"}
+
+# @app.post("/clear_aimed_objects")
+# async def clear_aimed_objects():
+#     aim.remove_all_aimed_objects()
+#     return {"status": "success", "message": "Cleared all aimed objects from the list"}
 
 
 @app.get("/")
