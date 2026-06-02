@@ -1,13 +1,11 @@
-// --- CONFIGURATION DU FLUX VIDÉO ---
 const mainImage = document.getElementById('main-image');
 mainImage.src = 'http://localhost:8000/video_feed';
 
-// --- CONTROLES MANUELS (FETCH / DIRECTION) ---
 const directionButtons = document.querySelectorAll('.direction');
 
 directionButtons.forEach(button => {
     button.addEventListener('click', (event) => {
-        // Gestion si le clic tape sur l'icône texte interne
+
         const buttonEl = event.target.closest('.direction');
         const directionAttr = buttonEl.id; // Utilise 'up', 'down', 'left', 'right'
         
@@ -33,8 +31,6 @@ directionButtons.forEach(button => {
     });
 });
 
-// --- DICTIONNAIRE DES STYLES TAILWIND POUR LES OBJECTIFS ---
-// Permet d'associer des classes uniques et propres à chaque type de badge
 const targetStyles = {
     'tasse': "bg-amber-900/40 text-amber-300 border border-amber-700/60",
     'voiture': "bg-slate-800/80 text-slate-200 border border-slate-600/60",
@@ -42,24 +38,21 @@ const targetStyles = {
     'teddy': "bg-orange-950/40 text-orange-400 border border-orange-800/60",
     'brosse': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
     'personne': "bg-purple-950/50 text-purple-300 border border-purple-800/60",
-    // Style par défaut pour les mots saisis dans la console inconnus
+
     'default': "bg-slate-800 text-slate-400 border border-slate-700"
 };
 
 const queueContainer = document.getElementById('target-queue');
 const objectButtons = document.querySelectorAll('.object');
 
-// --- FONCTION AJOUT FIL D'ATTENTE (CORRIGÉE POUR TAILWIND) ---
+
 function addToQueue(targetKey, displayName) {
     const queueItem = document.createElement('div');
     
-    // Classes de base communes à tous les badges (Tailwind)
     let baseClasses = "queue-item animate-pop-in text-xs font-mono uppercase font-bold tracking-wider py-1.5 px-3 rounded-lg shadow-sm ";
     
-    // Récupération du style spécifique ou application du style par défaut
     const specificStyle = targetStyles[targetKey.toLowerCase()] || targetStyles['default'];
     
-    // Injection du style complet et du texte
     queueItem.className = baseClasses + specificStyle;
     queueItem.textContent = displayName; 
     
@@ -67,7 +60,6 @@ function addToQueue(targetKey, displayName) {
     addLog(`Cible ajoutée aux objectifs : ${displayName}`, 'info');
 }
 
-// Clic sur les boutons de cibles graphiques
 objectButtons.forEach(button => {
     button.addEventListener('click', (event) => {
         const targetObject = event.target.getAttribute('data-target');
@@ -76,14 +68,12 @@ objectButtons.forEach(button => {
     });
 });
 
-// Bouton Effacer la file
 const clearBtn = document.getElementById('clear-queue');
 clearBtn.addEventListener('click', () => {
     queueContainer.innerHTML = ''; 
     addLog('File d\'objectifs réinitialisée', 'warning');
 });
 
-// --- CONSOLE TEXTUELLE ---
 const consoleInput = document.getElementById('console-input');
 consoleInput.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
@@ -92,12 +82,11 @@ consoleInput.addEventListener('keydown', (event) => {
         const text = consoleInput.value.trim();
         if (!text) return; 
 
-        // Sépare par les espaces pour gérer les séquences de mots
         const words = text.split(/\s+/); 
         
         words.forEach(word => {
             const cleanWord = word.toLowerCase();
-            // Si le mot existe dans nos styles de cibles, on utilise sa clé, sinon style par défaut
+
             if (targetStyles[cleanWord]) {
                 addToQueue(cleanWord, word);
             } else {
@@ -108,13 +97,11 @@ consoleInput.addEventListener('keydown', (event) => {
     }
 });
 
-// --- LOGS SYSTÈME (CORRIGÉS POUR TAILWIND) ---
 function addLog(message, type = 'info') {
     const logContainer = document.getElementById('log-container');
-    const logEntry = document.createElement('p'); // Changement en <p> pour matcher les exemples HTML
-    logEntry.className = "m-0"; // Retire les marges par défaut des paragraphes
+    const logEntry = document.createElement('p');
+    logEntry.className = "m-0";
 
-    // Association des couleurs de logs dynamiques en Tailwind
     switch(type) {
         case 'success':
             logEntry.classList.add('text-emerald-400');
@@ -134,16 +121,14 @@ function addLog(message, type = 'info') {
     const now = new Date();
     const timeString = now.toLocaleTimeString('fr-FR', { hour12: false });
 
-    // Injection de la structure avec le timestamp grisé
     logEntry.innerHTML = `<span class="text-slate-600">[${timeString}]</span> ${message}`;
 
     logContainer.appendChild(logEntry);
 
-    // Auto-scroll vers le bas
     logContainer.scrollTop = logContainer.scrollHeight;
 }
 
-// --- GESTION DES CONTROLES AU CLAVIER ---
+
 document.addEventListener('keydown', (event) => {
     let buttonId = null;
 
@@ -158,7 +143,6 @@ document.addEventListener('keydown', (event) => {
         event.preventDefault(); 
         
         const btn = document.getElementById(buttonId);
-        // Ajoute les classes d'activation Tailwind dynamiquement au D-Pad lors de l'appui touche
         btn.classList.add('scale-95', 'bg-blue-500'); 
         btn.click(); 
     }
