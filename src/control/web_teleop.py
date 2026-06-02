@@ -1,5 +1,5 @@
 import zenoh
-from common import *
+from control.common import *
 
 class TeleopManager:
     def __init__(

@@ -108,7 +108,6 @@ while True:
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
                         json.dumps(
                             {
-                                "detected_object": True
                                 "name": result.names[int(data[5])],
                                 "confiance": int(float(data[4]) * 100),
                                 "box": box,

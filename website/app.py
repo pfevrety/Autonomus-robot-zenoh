@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 from video.web_display_video import display_video_stream
-from motor.web_teleop import TeleopManager
+from control.web_teleop import TeleopManager
 
 process_detection = None
 
