@@ -4,9 +4,10 @@ import time
 import io
 import zenoh
 import json
-from src.motor.servo import *
+from motor.servo import *
 from pycdr2 import IdlStruct
 from pycdr2.types import int8, int32, uint32, float64
+
 
 @dataclass
 class Vector3(IdlStruct, typename="Vector3"):
@@ -14,67 +15,93 @@ class Vector3(IdlStruct, typename="Vector3"):
     y: float64
     z: float64
 
+
 @dataclass
 class Twist(IdlStruct, typename="Twist"):
     linear: Vector3
     angular: Vector3
 
-DEVICENAME                  = '/dev/ttyACM0'
-PROTOCOL_VERSION            = 2.0
-BAUDRATE                    = 115200
-MOTOR_ID                    = 200
+
+DEVICENAME = "/dev/ttyACM0"
+PROTOCOL_VERSION = 2.0
+BAUDRATE = 115200
+MOTOR_ID = 200
 
 parser = argparse.ArgumentParser(
-    prog='drive_motors',
-    description='zenoh drive_motors example')
-parser.add_argument('-m', '--mode', type=str, choices=['peer', 'client'],
-                    help='The zenoh session mode.')
-parser.add_argument('-e', '--connect', type=str, metavar='ENDPOINT', action='append',
-                    help='zenoh endpoints to connect to.')
-parser.add_argument('-l', '--listen', type=str, metavar='ENDPOINT', action='append',
-                    help='zenoh endpoints to listen on.')
-parser.add_argument('-d', '--delay', type=float, default=0.1,
-                    help='delay between each iteration in seconds')
-parser.add_argument('-p', '--prefix', type=str, default='rt/turtle1',
-                    help='resources prefix')
-parser.add_argument('-c', '--config', type=str, metavar='FILE',
-                    help='A zenoh configuration file.')
+    prog="drive_motors", description="zenoh drive_motors example"
+)
+parser.add_argument(
+    "-m", "--mode", type=str, choices=["peer", "client"], help="The zenoh session mode."
+)
+parser.add_argument(
+    "-e",
+    "--connect",
+    type=str,
+    metavar="ENDPOINT",
+    action="append",
+    help="zenoh endpoints to connect to.",
+)
+parser.add_argument(
+    "-l",
+    "--listen",
+    type=str,
+    metavar="ENDPOINT",
+    action="append",
+    help="zenoh endpoints to listen on.",
+)
+parser.add_argument(
+    "-d",
+    "--delay",
+    type=float,
+    default=0.1,
+    help="delay between each iteration in seconds",
+)
+parser.add_argument(
+    "-p", "--prefix", type=str, default="rt/turtle1", help="resources prefix"
+)
+parser.add_argument(
+    "-c", "--config", type=str, metavar="FILE", help="A zenoh configuration file."
+)
 
 args = parser.parse_args()
 
 count = 0
 cmd = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
 
-conf = zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
+conf = (
+    zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
+)
 if args.connect is not None:
-    conf.insert_json5('connect/endpoints', json.dumps(args.connect))
+    conf.insert_json5("connect/endpoints", json.dumps(args.connect))
 if args.mode is not None:
-    conf.insert_json5('mode', json.dumps(args.mode))
+    conf.insert_json5("mode", json.dumps(args.mode))
 if args.listen is not None:
-    conf.insert_json5('listen/endpoints', json.dumps(args.listen))
+    conf.insert_json5("listen/endpoints", json.dumps(args.listen))
 
 
-print('[INFO] Open zenoh session...')
+print("[INFO] Open zenoh session...")
 zenoh.init_log_from_env_or("error")
 z = zenoh.open(conf)
 
-publ = z.declare_publisher('{}/heartbeat'.format(args.prefix))
+publ = z.declare_publisher("{}/heartbeat".format(args.prefix))
+
 
 def listener(sample):
     global cmd
     cmd = Twist.deserialize(bytes(sample.payload))
 
-print('[INFO] Connect to motor...')
+
+print("[INFO] Connect to motor...")
 servo = Servo(DEVICENAME, PROTOCOL_VERSION, BAUDRATE, MOTOR_ID)
 if servo is None:
-    print('[WARN] Unable to connect to motor.')
+    print("[WARN] Unable to connect to motor.")
 else:
     servo.write1ByteTxRx(IMU_RE_CALIBRATION, 1)
-    sub = z.declare_subscriber('{}/cmd_vel'.format(args.prefix), listener)
+    sub = z.declare_subscriber("{}/cmd_vel".format(args.prefix), listener)
 
 time.sleep(3.0)
 
-print('[INFO] Running!')
+print("[INFO] Running!")
 while True:
     if servo is not None:
         servo.write1ByteTxRx(HEARTBEAT, count)
