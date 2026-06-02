@@ -11,6 +11,7 @@ class Aim:
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
+        self.deadzone = 0.2
 
         conf = zenoh.Config()
 
@@ -38,9 +39,9 @@ class Aim:
         if time.time() - self.last_time > 0.4:
             return
 
-        if self.aimed > 0.55:
+        if self.aimed > 0.5 - self.deadzone / 2:
             self.pub_twist(0.0, 1.0 * self.angular_scale)
-        elif self.aimed < 0.45:
+        elif self.aimed < 0.5 + self.deadzone / 2:
             self.pub_twist(0.0, -1.0 * self.angular_scale)
         else:
             self.pub_twist(0.0, 0.0)
@@ -56,7 +57,7 @@ try:
     print("Started Aim Successfully")
     while True:
         aim.move()
-        time.sleep(0.01)
+        time.sleep(0.1)
 except KeyboardInterrupt:
     print("Shutting down...")
 finally:

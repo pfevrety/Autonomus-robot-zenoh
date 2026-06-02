@@ -5,6 +5,7 @@ import cv2
 import json
 import random
 import zenoh
+import numpy as np
 
 parser = argparse.ArgumentParser(
     prog='capture_video',
@@ -64,7 +65,7 @@ time.sleep(1.0)
 
 while True:
     if picamera:
-        raw = vs.capture_array()
+        raw = np.flip(vs.capture_array(), axis=1)
     else:
         raw = vs.read()
     frame = imutils.resize(raw, width=args.width)
