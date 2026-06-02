@@ -39,14 +39,11 @@ class Aim:
         
         
 aim = Aim()
-
-if __name__ == "__main__":
-    print("Starting in standalone mode...")
-    try:
-        print("Started Forwarder Successfully")
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("Shutting down...")
-    finally:
-        aim.destroy()
+try:
+    print("Started Forwarder Successfully")
+    while True:
+        time.sleep(0.01)
+except KeyboardInterrupt:
+    print("Shutting down...")
+finally:
+    aim.destroy()

@@ -80,42 +80,54 @@ picamera = args.camera.startswith("picamera")
 cam_id = args.id
 
 print("[INFO] Open zenoh session...")
-
 zenoh.init_log_from_env_or("error")
 z = zenoh.open(conf)
 
 print("[INFO] Start video stream - Cam #{}".format(cam_id))
 if picamera:
     import picamera2
-
+    from libcamera import Transform
+    
     vs = picamera2.Picamera2()
-    # Let the camera hardware handle the resizing and use a faster video config
+    
+    # 1. HARDWARE SELECTION: Force a high framerate (e.g., 90 or 120 FPS)
+    # 2. HARDWARE TRANSFORMS: Let the camera sensor handle the vertical flip (vflip)
     config = vs.create_video_configuration(
-        main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB8888"}
+        main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB8888"},
+        controls={"FrameRate": 90.0}, # Adjust based on your module (90 for v2, 120 for v3)
+        transform=Transform(vflip=True)
     )
+    
+    # Boost buffer count to prevent frame drops if Zenoh network I/O lags slightly
+    config["buffer_count"] = 6 
+    
     vs.configure(config)
     vs.start()
 else:
     from imutils.video import VideoStream
-
     vs = VideoStream(src=0).start()
 
 time.sleep(1.0)
 
+# Main Loop Optimized for Speed
 while True:
-    if picamera:
-        raw = vs.capture_array()
-        raw = cv2.flip(raw, 0)
-    else:
-        raw = vs.read()
-    frame = imutils.resize(raw, width=args.width)
+    try:
+        if picamera:
+            # Captures array that is ALREADY flipped and correctly sized by hardware
+            frame = vs.capture_array()
+        else:
+            raw = vs.read()
+            frame = imutils.resize(raw, width=args.width)
 
-    _, jpeg = cv2.imencode(".jpg", frame, jpeg_opts)
+        # Encode to JPEG
+        _, jpeg = cv2.imencode(".jpg", frame, jpeg_opts)
 
-    # print('[DEBUG] Put frame: {}/cams/{}'.format(args.prefix, cam_id))
-    z.put("{}/cams/{}".format(args.prefix, cam_id), jpeg.tobytes())
+        # Publish over Zenoh (Zenoh's put is asynchronous by default)
+        z.put("{}/cams/{}".format(args.prefix, cam_id), jpeg.tobytes())
+        
+    except KeyboardInterrupt:
+        break
 
-    # time.sleep(args.delay)
-
+# Cleanup
 vs.stop()
 z.close()
