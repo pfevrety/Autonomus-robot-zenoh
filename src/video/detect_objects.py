@@ -6,6 +6,10 @@ import random
 import zenoh
 import numpy as np
 from ultralytics import YOLO
+from collections import deque
+
+stack = deque()
+
 
 parser = argparse.ArgumentParser(
     prog="detect", description="zenoh object detection example"
@@ -86,7 +90,7 @@ while True:
     for cam in list(cams):
         npImage = np.frombuffer(cams[cam], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
-
+        list_objects = []
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
         for result in results:
@@ -104,22 +108,30 @@ while True:
                     ]
 
                     hauteur, largeur = matImage.shape[:2]
+                    list_objects.append(
+                        {
+                            "info": result.names[int(data[5])],
+                            "confiance": int(float(data[4]) * 100),
+                            "box": box,
+                            "center": center,
+                            "normalize_center": [
+                                center[0] / largeur,
+                                center[1] / hauteur,
+                            ],
+                        }
+                    )
                     z.put(
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
-                        json.dumps(
-                            {
-                                "info": result.names[int(data[5])],
-                                "confiance": int(float(data[4]) * 100),
-                                "box": box,
-                                "center": center,
-                                "normalize_center": [
-                                    center[0] / largeur,
-                                    center[1] / hauteur,
-                                ],
-                            }
-                        ),
+                        json.dumps(list_objects[-1]),
                     )
                     i += 1
+        stack.append(list_objects)
+        if len(stack) > 10:
+            stack.popleft()
+            z.put(
+                "{}/stack/{}".format(args.prefix, cam),
+                json.dumps(list_objects),
+            )
 
     time.sleep(args.delay)
 

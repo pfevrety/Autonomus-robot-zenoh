@@ -117,6 +117,7 @@ while True:
                             2,
                         )
 
+                # pas d'objet
             cv2.imshow("Cam #" + cam, matImage)
 
     key = cv2.waitKey(1) & 0xFF
