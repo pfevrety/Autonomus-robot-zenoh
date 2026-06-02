@@ -52,7 +52,9 @@ print('[INFO] Start video stream - Cam #{}'.format(cam_id))
 if picamera:
     import picamera2
     vs = picamera2.Picamera2()
-    vs.configure(vs.create_still_configuration({'format': 'XRGB8888'}))
+    # Let the camera hardware handle the resizing and use a faster video config
+    config = vs.create_video_configuration(main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB8888"})
+    vs.configure(config)
     vs.start()
 else:
     from imutils.video import VideoStream
