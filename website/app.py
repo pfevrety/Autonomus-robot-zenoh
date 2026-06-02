@@ -13,6 +13,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 from video.web_display_video import display_video_stream
 from control.web_teleop import TeleopManager
 
+# --- IMPORT AIM HERE ---
+# Adjust the import path depending on where aim.py is located. 
+# If it's in the same directory, use: from aim import aim
 import video.forwarder
 process_detection = None
 teleop = TeleopManager()
@@ -66,22 +69,22 @@ async def receive_command(request: Request):
 app.mount("/scripts", StaticFiles(directory="website/scripts"), name="script")
 app.mount("/styles", StaticFiles(directory="website/styles"), name="style")
 
-@app.remove("/add_aimed_object")
-async def remove_aimed_object(request: Request):
+@app.post("/add_aimed_object")
+async def add_aimed_object(request: Request):
     data = await request.json()
     object_name = data.get("object_name")
     
-    if object_name and object_name in aim.aimed_object_list:
-        aim.aimed_object_list.remove(object_name)
-        print(f"Removed {object_name} from aimed objects list")
-        return {"status": "success", "message": f"Removed {object_name} from aimed objects list"}
+    if object_name:
+        aim.add_aimed_object(object_name)
+        return {"status": "success", "message": f"Added {object_name} to aimed objects list"}
     else:
-        return {"status": "error", "message": "No valid object name provided"}
+        return {"status": "error", "message": "No object name provided"}
 
 @app.post("/clear_aimed_objects")
 async def clear_aimed_objects():
     aim.remove_all_aimed_objects()
     return {"status": "success", "message": "Cleared all aimed objects from the list"}
+
 
 @app.get("/")
 def serve_home():
