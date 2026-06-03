@@ -90,7 +90,7 @@ def listener(sample):
     global cmd
     cmd = Twist.deserialize(bytes(sample.payload))
 def klaxon_listener(sample):
-    sound_id = int(sample.payload.decode('utf-8'))
+    sound_id = 3
     print(f"[INFO] Zenoh command received: Play sound {sound_id}")
     servo.write1ByteTxRx(HEARTBEAT, 0)
     servo.write4ByteTxRx(SOUND, sound_id)
