@@ -48,6 +48,8 @@ class Aim:
 
     def box_callback(self, sample: zenoh.Sample):
         current_time = time.time()
+
+        print("box detected", current_time - self.last_action_time)
         if current_time - self.last_action_time < self.latency:
             return
 
@@ -57,7 +59,7 @@ class Aim:
 
     def not_box_callback(self):
         current_time = time.time()
-
+        print("No box detected", current_time - self.last_action_time)
         if current_time - self.last_action_time < self.latency + 0.1:
             return
 
