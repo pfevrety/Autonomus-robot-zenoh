@@ -32,7 +32,7 @@ const targetStyles = {
     'car': "bg-slate-800/80 text-slate-200 border border-slate-600/60",
     'banana': "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-yellow-500/5",
     'teddy bear': "bg-orange-950/40 text-orange-400 border border-orange-800/60",
-    'toothbrush': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
+    'bottle': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
     'person': "bg-purple-950/50 text-purple-300 border border-purple-800/60",
 
     'default': "bg-slate-800 text-slate-400 border border-slate-700"
@@ -212,3 +212,35 @@ document.addEventListener('keyup', (event) => {
         btn.classList.remove('scale-95', 'bg-blue-500');
     }
 });
+
+const latencySlider = document.getElementById('latency-slider');
+const latencyVal = document.getElementById('latency-val');
+const sensitivitySlider = document.getElementById('sensitivity-slider');
+const sensitivityVal = document.getElementById('sensitivity-val');
+
+function sendSliderValue(endpoint, valueKey, value) {
+    fetch(`http://localhost:8000/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [valueKey]: value })
+    })
+    .catch(error => {
+        console.error(`Erreur sur ${endpoint}:`, error);
+    });
+}
+
+if (latencySlider) {
+    latencySlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        latencyVal.textContent = `${val} ms`;
+        sendSliderValue('update_latency', 'latency', val);
+    });
+}
+
+if (sensitivitySlider) {
+    sensitivitySlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        sensitivityVal.textContent = val.toFixed(1); 
+        sendSliderValue('update_sensitivity', 'sensitivity', val);
+    });
+}

@@ -65,7 +65,7 @@
                         <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="car">Voiture</button>
                         <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="banana">Banane</button>
                         <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="teddy bear">Teddy Bear</button>
-                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="toothbrush">Brosse à dent</button>
+                        <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="bottle">bouteille</button>
                         <button class="control-btn object py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition-all duration-150" data-target="person">Personne</button>
                     </div>
                 </div>
@@ -73,14 +73,9 @@
                 <input type="text" id="console-input" class="w-full bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 py-3 px-4 rounded-xl font-mono text-sm shadow-inner transition-all duration-200" placeholder="> entrer séquence manuelle...">
 
 
-                <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
-                    <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Son</h3>
-                    <div class="grid grid-cols-1 gap-3">
-                        <button class="control-btn object py-3 px-4 bg-red-600 hover:bg-red-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-red-900/30 transition-all duration-150" data-target="klaxon">Klaxon</button>
-                    </div>
-                </div>
             </div>
 
+                
             <div class="lg:col-span-8 flex flex-col">
                 <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 h-full">
                     <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Camera Feed</h3>
@@ -91,7 +86,39 @@
             </div>
 
         </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 md:col-span-1">
+                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Bip Bip</h3>
+                <div class="flex items-center justify-center h-full min-h-[68px]">
+                    <button class="control-btn object py-3 px-4 bg-red-600 hover:bg-red-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-red-900/30 transition-all duration-150 w-full h-full" data-target="klaxon">
+                        Klaxon
+                    </button>
+                </div>
+            </div>              
 
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 md:col-span-2">
+                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Réglages</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-center">
+                    
+                    <div class="flex flex-col gap-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
+                        <label for="latency-slider" class="text-xs font-mono text-slate-400 flex justify-between">
+                            Latence <span id="latency-val" class="text-cyan-400 font-bold">500 ms</span>
+                        </label>
+                        <input type="range" id="latency-slider" min="0" max="5000" value="500" class="w-full accent-cyan-500">
+                    </div>
+
+                    <div class="flex flex-col gap-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
+                        <label for="sensitivity-slider" class="text-xs font-mono text-slate-400 flex justify-between">
+                            échelle angulaire<span id="sensitivity-val" class="text-cyan-400 font-bold">200</span>
+                        </label>
+                        <input type="range" id="sensitivity-slider" min="2" max="200" step="1" value="200" class="w-full accent-cyan-500">
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">

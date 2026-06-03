@@ -23,6 +23,8 @@ import video.forwarder
 
 process_detection = None
 teleop = TeleopManager()
+ANGULAR_SCALE = 200
+LATENCY = 0.5
 
 
 @asynccontextmanager
@@ -95,6 +97,30 @@ async def add_aimed_object(request: Request):
 async def clear_aimed_objects():
     video.forwarder.aim.remove_all_aimed_objects()
     return {"status": "success", "message": "Cleared all aimed objects from the list"}
+
+
+@app.post("/update_latency")
+async def update_latency(request: Request):
+    global LATENCY
+    data = await request.json()
+    LATENCY = data.get("latency")
+
+    if LATENCY is not None:
+        video.forwarder.aim.session.put("robot/config/latency", str(LATENCY))
+        return {"status": "success", "latency": LATENCY}
+    return {"status": "error", "message": "Valeur manquante"}
+
+
+@app.post("/update_sensitivity")
+async def update_sensitivity(request: Request):
+    global ANGULAR_SCALE
+    data = await request.json()
+    ANGULAR_SCALE = data.get("sensitivity")
+
+    if ANGULAR_SCALE is not None:
+        video.forwarder.aim.session.put("robot/config/sensitivity", str(ANGULAR_SCALE))
+        return {"status": "success", "sensitivity": ANGULAR_SCALE}
+    return {"status": "error", "message": "Valeur manquante"}
 
 
 @app.post("/klaxon")
