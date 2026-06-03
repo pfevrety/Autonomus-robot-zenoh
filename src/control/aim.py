@@ -48,7 +48,7 @@ class Aim:
 
     def box_callback(self, sample: zenoh.Sample):
         current_time = time.time()
-
+        print("callback")
         self.last_time = current_time
 
         if current_time - self.last_action_time < self.latency:
