@@ -66,11 +66,11 @@ class Aim:
         self.last_time = current_time
         if (
             0.05 < current_time - self.last_action_time < self.latency
-            and current_time - self.aimed > 0.1
+            and current_time - self.aimed_time > 0.1
         ):
             self.aimed = 0.5
             return
-        print("NOOOOOTAIIIIIMED")
+        print("NOOOOOOOOOOOOO")
         self.last_action_time = current_time
         self.aimed = 0.9
 
