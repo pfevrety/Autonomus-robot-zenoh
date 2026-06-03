@@ -12,7 +12,7 @@ class Aim:
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
         self.deadzone = 0.2
-
+        self.aimed_time = 0.01 + time.time()
         self.latency = 0.5
         self.last_action_time = 0.0
 
@@ -50,7 +50,8 @@ class Aim:
         current_time = time.time()
 
         self.last_time = current_time
-
+        print("AIIIIIMED", self.aimed)
+        self.aimed_time = time.time()
         if current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
             return
@@ -63,10 +64,13 @@ class Aim:
     def not_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
         self.last_time = current_time
-        if 0.05 < current_time - self.last_action_time < self.latency:
+        if (
+            0.05 < current_time - self.last_action_time < self.latency
+            and current_time - self.aimed > 0.1
+        ):
             self.aimed = 0.5
             return
-        print("ACTIOOOOON")
+        print("NOOOOOTAIIIIIMED")
         self.last_action_time = current_time
         self.aimed = 0.9
 
