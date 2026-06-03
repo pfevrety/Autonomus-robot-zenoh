@@ -11,10 +11,11 @@ class TeleopManager:
         angular_scale=200.0,
     ):
         self.cmd_vel_topic = cmd_vel_topic
+        self.klaxon_topic = cmd_vel_topic.replace("cmd_vel", "klaxon") 
         self.rosout = rosout
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
-
+        
         conf = zenoh.Config()
         zenoh.init_log_from_env_or("error")
         print("Openning session...")
@@ -30,6 +31,10 @@ class TeleopManager:
         )
         self.session.put(self.cmd_vel_topic, t.serialize())
 
+    def pub_bip(self, sound_id=1):
+        print(f"Pub sound ID {sound_id} via Zenoh sur {self.klaxon_topic}")
+        self.session.put(self.klaxon_topic, str(sound_id).encode('utf-8'))
+
     def handle_command(self, action):
         if action == "move_up":
             self.pub_twist(-1.0 * self.linear_scale, 0.0)
@@ -41,3 +46,5 @@ class TeleopManager:
             self.pub_twist(0.0, -1.0 * self.angular_scale)
         elif action == "stop":
             self.pub_twist(0.0, 0.0)
+        elif action == "bip":
+            self.pub_bip(3)

@@ -94,10 +94,11 @@ async def clear_aimed_objects():
     payload = json.dumps({"action": "clear"})
     teleop.session.put("robot/config/aimed_objects", payload.encode('utf-8'))
     return {"status": "success", "message": "Sent command to clear all aimed objects"}
+
 @app.post("/klaxon")
 async def activate_klaxon():
-    print("[INFO] Klaxon activated!")
-    play_sound(1)
+    print("[INFO] Klaxon command via Zenoh requested")
+    teleop.pub_bip(1)
     return {"status": "success", "action": "klaxon"}
 
 @app.get("/")

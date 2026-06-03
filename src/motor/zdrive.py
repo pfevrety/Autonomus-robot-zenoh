@@ -89,6 +89,11 @@ publ = z.declare_publisher("{}/heartbeat".format(args.prefix))
 def listener(sample):
     global cmd
     cmd = Twist.deserialize(bytes(sample.payload))
+def klaxon_listener(sample):
+    sound_id = int(sample.payload.decode('utf-8'))
+    print(f"[INFO] Zenoh command received: Play sound {sound_id}")
+    servo.write1ByteTxRx(HEARTBEAT, 0)
+    servo.write4ByteTxRx(SOUND, sound_id)
 
 
 print("[INFO] Connect to motor...")
@@ -97,7 +102,8 @@ if servo is None:
     print("[WARN] Unable to connect to motor.")
 else:
     servo.write1ByteTxRx(IMU_RE_CALIBRATION, 1)
-    sub = z.declare_subscriber("{}/cmd_vel".format(args.prefix), listener)
+    sub_cmd = z.declare_subscriber("{}/cmd_vel".format(args.prefix), listener)
+    sub_klaxon = z.declare_subscriber("{}/klaxon".format(args.prefix), klaxon_listener)
 
 time.sleep(3.0)
 
