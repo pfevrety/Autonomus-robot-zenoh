@@ -21,6 +21,9 @@ class Aim:
         self.sub = self.session.declare_subscriber(
             "robot/not_aimed", self.not_aimed_callback
         )
+        self.sub = self.session.declare_subscriber(
+            "robot/nothing_to_aimed", self.nothing_to_aimed_callback
+        )
         self.aimed = 0.5
         self.last_time = -2.0
 
@@ -32,6 +35,10 @@ class Aim:
     def not_aimed_callback(self, sample: zenoh.Sample):
         self.last_time = time.time()
         self.aimed = 0.9
+
+    def nothing_to_aimed_callback(self, sample: zenoh.Sample):
+        self.last_time = time.time()
+        self.aimed = 0.5
 
     def pub_twist(self, linear, angular):
 

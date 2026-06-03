@@ -57,6 +57,7 @@ def display_video_stream():
             if "img" in cams[cam]:
                 npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
                 matImage = cv2.imdecode(npImage, 1)
+                matImage = cv2.cvtColor(matImage, cv2.COLOR_RGB2BGR)
                 if "objects" in cams[cam]:
                     for obj in list(cams[cam]["objects"]):
                         if cams[cam]["objects"][obj]["time"] > now - 0.2:

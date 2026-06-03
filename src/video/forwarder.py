@@ -19,6 +19,8 @@ class Aim:
         data = json.loads(sample.payload.to_bytes())
         if data.get("name") in self.aimed_object_list:
             self.session.put("robot/aimed", sample.payload)
+        elif len(self.aimed_object_list) == 0:
+            self.session.put("robot/nothing_to_aimed", sample.payload)
         else:
             self.session.put("robot/not_aimed", sample.payload)
 
