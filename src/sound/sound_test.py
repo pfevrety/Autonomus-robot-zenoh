@@ -41,3 +41,13 @@ if servo is not None:
     servo.write1ByteTxRx(HEARTBEAT, 0)
     servo.write4ByteTxRx(SOUND, 0)
     time.sleep(5)
+
+    print("Play OFF")
+    servo.write1ByteTxRx(HEARTBEAT, 0)
+    servo.write4ByteTxRx(SOUND, 4)
+    time.sleep(5)
+
+    print("Play OFF")
+    servo.write1ByteTxRx(HEARTBEAT, 0)
+    servo.write4ByteTxRx(SOUND, 5)
+    time.sleep(5)
