@@ -84,11 +84,12 @@ class Aim:
 
     def pub_twist(self, linear, angular):
         current_time = time.time()
-        if current_time - self.last_movement < 0.05:
+        if angular == 0 and linear == 0:
+            return
+        if current_time - self.last_movement < 0.1:
             return
         self.last_movement = current_time
-        if angular != 0:
-            print("move", linear, angular)
+        print("move", linear, angular)
         return
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
