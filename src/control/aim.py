@@ -88,8 +88,8 @@ class Aim:
             return
         if current_time - self.last_movement < 0.1:
             return
-        self.last_movement = current_time
         print("move", linear, angular)
+        self.last_movement = current_time
         return
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
