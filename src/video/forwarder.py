@@ -21,8 +21,6 @@ class Aim:
         if data.get("name") in self.aimed_object_list:
             self.session.put("robot/aimed", sample.payload)
         elif len(self.aimed_object_list) == 0:
-            return
-        else:
             self.session.put("robot/not_aimed", sample.payload)
 
     def add_aimed_object(self, object_name):

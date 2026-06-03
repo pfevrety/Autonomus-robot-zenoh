@@ -19,9 +19,6 @@ class Aim:
         self.session = zenoh.open(conf)
 
         self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
-        self.sub2 = self.session.declare_subscriber(
-            "robot/not_aimed", self.not_aimed_callback
-        )
 
         self.sub_lat = self.session.declare_subscriber(
             "robot/config/latency", self.latency_callback
@@ -53,18 +50,21 @@ class Aim:
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
 
-    def not_aimed_callback(self, sample: zenoh.Sample):
+    def not_box_callback(self, sample: zenoh.Sample):
         current_time = time.time()
         #     self.last_time = current_time
         #     if current_time - self.aimed_time > 0.1:
         #         return
-        print("NOOOOOOOOOOOOO")
         if current_time - self.last_action_time < self.latency:
             return
 
         self.last_action_time = current_time
 
         self.aimed = 0.9
+
+    def not_aimed_callback(self, sample: zenoh.Sample):
+
+        self.aimed = 0.5
 
     def move(self):
 
