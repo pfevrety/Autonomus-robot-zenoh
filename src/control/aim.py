@@ -93,8 +93,9 @@ class Aim:
         if angular == 0 and linear == 0:
             return
         print("move", linear, angular)
-        return
+
         self.aimed = 2.0
+        return
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular)),
