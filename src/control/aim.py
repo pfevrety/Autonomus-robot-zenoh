@@ -19,7 +19,9 @@ class Aim:
         self.session = zenoh.open(conf)
 
         self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
-
+        self.sub_state = self.session.declare_subscriber(
+            "robot/state", self.state_callback
+        )
         self.sub_lat = self.session.declare_subscriber(
             "robot/config/latency", self.latency_callback
         )
@@ -28,7 +30,12 @@ class Aim:
         )
 
         self.aimed = 0.5
+        self.robot_state = "WAIT"
+
         self.last_action_time = time.time()
+
+    def state_callback(self, sample: zenoh.Sample):
+        self.robot_state = sample.payload.to_bytes().decode("utf-8")
 
     def latency_callback(self, sample: zenoh.Sample):
         self.latency = float(sample.payload.to_bytes().decode("utf-8")) / 1000
@@ -40,9 +47,6 @@ class Aim:
 
     def box_callback(self, sample: zenoh.Sample):
         current_time = time.time()
-        # print("AIIIIIMED")
-
-        # self.aimed_time = time.time()
         if current_time - self.last_action_time < self.latency:
             return
 
@@ -50,11 +54,9 @@ class Aim:
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
 
-    def not_box_callback(self, sample: zenoh.Sample):
+    def not_box_callback(self):
         current_time = time.time()
-        #     self.last_time = current_time
-        #     if current_time - self.aimed_time > 0.1:
-        #         return
+
         if current_time - self.last_action_time < self.latency:
             return
 
@@ -62,15 +64,16 @@ class Aim:
 
         self.aimed = 0.9
 
-    def not_aimed_callback(self, sample: zenoh.Sample):
-
-        self.aimed = 0.5
-
     def move(self):
 
         if time.time() - self.last_action_time > 0.4:
             return
-        if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
+        if self.aimed == 2.0:
+            if self.robot_state == "SEARCHING":
+                self.not_box_callback()
+            else:
+                return
+        elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(0.0, 0.0)
         else:
             intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
@@ -84,11 +87,10 @@ class Aim:
                 self.pub_twist(0.0, -intensity * self.angular_scale)
 
     def pub_twist(self, linear, angular):
-        current_time = time.time()
         if angular == 0 and linear == 0:
             return
         print("move", linear, angular)
-        self.aimed = 0.5
+        self.aimed = 2.0
         return
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
@@ -98,9 +100,8 @@ class Aim:
         return
 
     def destroy(self):
-        # On nettoie proprement les souscriptions
         self.sub.undeclare()
-        self.sub2.undeclare()
+        self.sub_state.undeclare()
         self.sub_lat.undeclare()
         self.sub_sens.undeclare()
         self.session.close()

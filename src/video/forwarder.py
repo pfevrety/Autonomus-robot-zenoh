@@ -1,4 +1,3 @@
-# forwarder.py
 import zenoh
 import json
 import time
@@ -13,33 +12,33 @@ class Aim:
             "**/objects/**", self.objects_callback
         )
         self.aimed_object_list = []
+        self.update_state()
+
+    def update_state(self):
+        state = "SEARCHING" if len(self.aimed_object_list) > 0 else "WAIT"
+        self.session.put("robot/state", state)
 
     def objects_callback(self, sample: zenoh.Sample):
-        self.last_time = time.time()
         data = json.loads(sample.payload.to_bytes())
-        # print(data.get("name"), self.aimed_object_list)
         if data.get("name") in self.aimed_object_list:
             self.session.put("robot/aimed", sample.payload)
-        elif len(self.aimed_object_list) == 0:
-            self.session.put("robot/not_aimed", sample.payload)
 
     def add_aimed_object(self, object_name):
-
         if object_name not in self.aimed_object_list:
             self.aimed_object_list.append(object_name)
             print(f"Added {object_name} to aimed objects list")
-            self.sub = self.session.declare_subscriber(
-                "**/objects/**", self.objects_callback
-            )
+            self.update_state()
 
     def remove_aimed_object(self, object_name):
         if object_name in self.aimed_object_list:
             self.aimed_object_list.remove(object_name)
             print(f"Removed {object_name} from aimed objects list")
+            self.update_state()
 
     def remove_all_aimed_objects(self):
         self.aimed_object_list.clear()
         print("Cleared all aimed objects from the list")
+        self.update_state()
 
     def destroy(self):
         self.sub.undeclare()
