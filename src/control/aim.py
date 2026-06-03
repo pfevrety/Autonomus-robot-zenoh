@@ -52,6 +52,7 @@ class Aim:
         self.last_time = current_time
 
         if current_time - self.last_action_time < self.latency:
+            self.aimed = 0.5
             return
 
         # Si le temps est écoulé, on traite l'image et on réinitialise le chrono
@@ -64,6 +65,7 @@ class Aim:
         self.last_time = current_time
         print(self.latency, current_time - self.last_action_time, self.angular_scale)
         if current_time - self.last_action_time < self.latency:
+            self.aimed = 0.5
             return
 
         self.last_action_time = current_time
@@ -72,11 +74,6 @@ class Aim:
     def nothing_to_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
         self.last_time = current_time
-
-        if current_time - self.last_action_time < self.latency:
-            return
-
-        self.last_action_time = current_time
         self.aimed = 0.5
 
     def pub_twist(self, linear, angular):
