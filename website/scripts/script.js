@@ -57,10 +57,28 @@ function addToQueue(targetKey, displayName) {
         
 }
 
+
+
 objectButtons.forEach(button => {
     button.addEventListener('click', (event) => {
         const targetObject = event.target.getAttribute('data-target');
         const targetName = event.target.innerText; 
+        if (targetObject === 'klaxon') {
+            addLog('Klaxon activé !', 'warning');
+            fetch('http://localhost:8000/klaxon', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action: 'klaxon' })
+            })
+            .then(response => response.json())
+            .catch(error => {
+                console.error('Erreur:', error);
+                addLog('Échec commande : klaxon', 'error');
+            });
+            return;
+        }
         addToQueue(targetObject, targetName);
 
         fetch('http://localhost:8000/add_aimed_object', {

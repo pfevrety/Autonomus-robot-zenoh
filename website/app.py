@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 from contextlib import asynccontextmanager
+from sound import sound
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 from video.web_display_video import display_video_stream
@@ -19,7 +20,6 @@ from control.web_teleop import TeleopManager
 # import video.forwarder
 process_detection = None
 teleop = TeleopManager()
-# aim = video.forwarder.aim
 
 
 @asynccontextmanager
@@ -94,6 +94,11 @@ app.mount("/styles", StaticFiles(directory="website/styles"), name="style")
 #     aim.remove_all_aimed_objects()
 #     return {"status": "success", "message": "Cleared all aimed objects from the list"}
 
+@app.post("/klaxon")
+async def activate_klaxon():
+    print("[INFO] Klaxon activated!")
+    sound.play_sound(1)
+    return {"status": "success", "action": "klaxon"}
 
 @app.get("/")
 def serve_home():
