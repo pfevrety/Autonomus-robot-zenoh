@@ -65,10 +65,9 @@ class Aim:
     def not_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
         self.last_time = current_time
-        if (
-            0.05 < current_time - self.last_action_time < self.latency
-            and current_time - self.aimed_time > 0.1
-        ):
+        if current_time - self.aimed_time > 0.1:
+            return
+        if 0.05 < current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
             return
         print("NOOOOOOOOOOOOO")
