@@ -66,16 +66,17 @@ class Aim:
         self.aimed = 0.9
 
     def move(self):
-
-        if time.time() - self.last_action_time > 0.4:
-            return
-        print(self.aimed, self.robot_state)
         if self.aimed == 2.0:
             if self.robot_state == "SEARCHING":
                 print(f"Recherche en cours...")
                 self.not_box_callback()
             else:
                 return
+        if time.time() - self.last_action_time > 0.4:
+            return
+        print(self.aimed, self.robot_state)
+        if self.aimed == 2.0:
+            return
         elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(0.0, 0.0)
         else:
