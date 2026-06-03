@@ -51,7 +51,6 @@ running = True
 
 
 def processing_thread(zenoh_session, key, opts):
-    """Thread dédié à l'encodage JPEG et à l'envoi réseau."""
     while running:
         try:
             frame = frame_queue.get(timeout=1.0)
@@ -84,7 +83,7 @@ if picamera:
 
     height = int(args.width * 0.75)
     config = vs.create_video_configuration(
-        main={"size": (args.width, height), "format": "BGR888"},
+        main={"size": (args.width, height), "format": "RGB888"},
         controls={"FrameRate": 90.0},
         transform=Transform(vflip=True),
     )
