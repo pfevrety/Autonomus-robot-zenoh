@@ -48,7 +48,6 @@ class Aim:
 
     def box_callback(self, sample: zenoh.Sample):
         current_time = time.time()
-        print("box detected", current_time - self.last_action_time)
         if current_time - self.last_action_time < self.latency:
             return
 
@@ -58,7 +57,6 @@ class Aim:
 
     def not_box_callback(self):
         current_time = time.time()
-        print("No box detected", current_time - self.last_action_time)
         if current_time - self.last_action_time < self.latency * 1.2:
             return
 
@@ -94,7 +92,6 @@ class Aim:
         print("\nmove", linear, angular)
 
         self.aimed = 2.0
-        return
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular)),
