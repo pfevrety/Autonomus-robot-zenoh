@@ -8,6 +8,7 @@ import os
 import sys
 import subprocess
 from contextlib import asynccontextmanager
+import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -75,22 +76,24 @@ async def receive_command(request: Request):
 app.mount("/scripts", StaticFiles(directory="website/scripts"), name="script")
 app.mount("/styles", StaticFiles(directory="website/styles"), name="style")
 
-# @app.post("/add_aimed_object")
-# async def add_aimed_object(request: Request):
-#     data = await request.json()
-#     object_name = data.get("object_name")
+@app.post("/add_aimed_object")
+async def add_aimed_object(request: Request):
+    data = await request.json()
+    object_name = data.get("object_name")
 
-#     if object_name:
-#         aim.add_aimed_object(object_name)
-#         return {"status": "success", "message": f"Added {object_name} to aimed objects list"}
-#     else:
-#         return {"status": "error", "message": "No object name provided"}
+    if object_name:
+        payload = json.dumps({"action": "add", "object_name": object_name})
+        teleop.session.put("robot/config/aimed_objects", payload.encode('utf-8'))
+        
+        return {"status": "success", "message": f"Sent command to add {object_name}"}
+    else:
+        return {"status": "error", "message": "No object name provided"}
 
-# @app.post("/clear_aimed_objects")
-# async def clear_aimed_objects():
-#     aim.remove_all_aimed_objects()
-#     return {"status": "success", "message": "Cleared all aimed objects from the list"}
-
+@app.post("/clear_aimed_objects")
+async def clear_aimed_objects():
+    payload = json.dumps({"action": "clear"})
+    teleop.session.put("robot/config/aimed_objects", payload.encode('utf-8'))
+    return {"status": "success", "message": "Sent command to clear all aimed objects"}
 @app.post("/klaxon")
 async def activate_klaxon():
     print("[INFO] Klaxon activated!")

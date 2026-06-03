@@ -1,4 +1,4 @@
-# forwarder.py
+# forwarder.py (Modifié)
 import zenoh
 import json
 import time
@@ -8,36 +8,37 @@ class Aim:
         conf = zenoh.Config()
         zenoh.init_log_from_env_or("error")
         self.session = zenoh.open(conf)
+        
         self.sub = self.session.declare_subscriber("**/objects/**", self.objects_callback)
+        self.config_sub = self.session.declare_subscriber("robot/config/aimed_objects", self.config_callback)
+        
         self.aimed_object_list = []
         
     def objects_callback(self, sample: zenoh.Sample):
-        self.last_time = time.time()
         data = json.loads(sample.payload.to_bytes())
         if data.get("name") in self.aimed_object_list:
-            print("Forwarding")
+            print(f"[FORWARDER] Forwarding detection of {data.get('name')}")
             self.session.put("robot/aimed", sample.payload)
 
-    def add_aimed_object(self, object_name):
-        if object_name not in self.aimed_object_list:
-            self.aimed_object_list.append(object_name)
-            print(f"Added {object_name} to aimed objects list")
+    # 3. NOUVEAU : Callback qui traite les messages de configuration
+    def config_callback(self, sample: zenoh.Sample):
+        msg = json.loads(sample.payload.to_bytes())
+        action = msg.get("action")
+        object_name = msg.get("object_name")
 
-    def remove_aimed_object(self, object_name):
-        if object_name in self.aimed_object_list:
-            self.aimed_object_list.remove(object_name)
-            print(f"Removed {object_name} from aimed objects list")
-    
-    def remove_all_aimed_objects(self):
-        self.aimed_object_list.clear()
-        print("Cleared all aimed objects from the list")
-        
+        if action == "add" and object_name:
+            if object_name not in self.aimed_object_list:
+                self.aimed_object_list.append(object_name)
+                print(f"[FORWARDER] Added {object_name} to aimed list. Current: {self.aimed_object_list}")
+        elif action == "clear":
+            self.aimed_object_list.clear()
+            print("[FORWARDER] Cleared all aimed objects from list.")
 
     def destroy(self):
         self.sub.undeclare()
+        self.config_sub.undeclare()
         self.session.close()
-        
-        
+
 aim = Aim()
 try:
     print("Started Forwarder Successfully")
