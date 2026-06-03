@@ -28,12 +28,12 @@ directionButtons.forEach(button => {
 });
 
 const targetStyles = {
-    'tasse': "bg-amber-900/40 text-amber-300 border border-amber-700/60",
-    'voiture': "bg-slate-800/80 text-slate-200 border border-slate-600/60",
-    'banane': "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-yellow-500/5",
-    'teddy': "bg-orange-950/40 text-orange-400 border border-orange-800/60",
-    'brosse': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
-    'personne': "bg-purple-950/50 text-purple-300 border border-purple-800/60",
+    'chair': "bg-amber-900/40 text-amber-300 border border-amber-700/60",
+    'car': "bg-slate-800/80 text-slate-200 border border-slate-600/60",
+    'banana': "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-yellow-500/5",
+    'teddy bear': "bg-orange-950/40 text-orange-400 border border-orange-800/60",
+    'toothbrush': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
+    'person': "bg-purple-950/50 text-purple-300 border border-purple-800/60",
 
     'default': "bg-slate-800 text-slate-400 border border-slate-700"
 };
