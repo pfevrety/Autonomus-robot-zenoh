@@ -58,7 +58,7 @@ class Aim:
     def not_box_callback(self):
         current_time = time.time()
 
-        if current_time - self.last_action_time < self.latency:
+        if current_time - self.last_action_time < self.latency + 0.1:
             return
 
         self.last_action_time = current_time
