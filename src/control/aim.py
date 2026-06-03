@@ -67,7 +67,7 @@ class Aim:
         if current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
             return
-
+        print("ACTIOOOOON")
         self.last_action_time = current_time
         self.aimed = 0.9
 
@@ -84,7 +84,7 @@ class Aim:
         self.session.put(self.cmd_vel_topic, t.serialize())
 
     def move(self):
-        if time.time() - self.last_time > 0.4:
+        if time.time() - self.last_time > self.latency + 0.4:
             return
 
         if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
