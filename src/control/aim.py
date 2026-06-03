@@ -110,3 +110,16 @@ class Aim:
         self.sub_lat.undeclare()
         self.sub_sens.undeclare()
         self.session.close()
+
+
+print("Starting...")
+aim = Aim()
+try:
+    print("Started Aim Successfully")
+    while True:
+        aim.move()
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("Shutting down...")
+finally:
+    aim.destroy()
