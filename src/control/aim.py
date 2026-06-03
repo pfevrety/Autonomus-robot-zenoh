@@ -35,6 +35,7 @@ class Aim:
 
         self.aimed = 0.5
         self.last_action_time = time.time()
+        self.last_movement = time.time()
         self.last_time = 0.0
 
     def latency_callback(self, sample: zenoh.Sample):
@@ -57,7 +58,7 @@ class Aim:
             self.aimed = 0.5
             return
 
-        # self.last_action_time = current_time
+        self.last_action_time = current_time
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
         # print("AIIIIIMED", self.aimed, data.get("normalized_center")[0])
@@ -82,6 +83,10 @@ class Aim:
         self.aimed = 0.5
 
     def pub_twist(self, linear, angular):
+        current_time = time.time()
+        if current_time - self.last_movement < 0.05:
+            return
+        self.last_movement = current_time
         if angular != 0:
             print("move", linear, angular)
         return
