@@ -77,7 +77,7 @@ class Aim:
         if self.aimed == 2.0:
             return
         elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
-            self.pub_twist(0.0, 0.0)
+            self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
         else:
             intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
                 0.5 - self.deadzone / 2.0
