@@ -18,6 +18,9 @@ class Aim:
         zenoh.init_log_from_env_or("error")
         self.session = zenoh.open(conf)
         self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
+        self.sub = self.session.declare_subscriber(
+            "robot/not_aimed", self.not_aimed_callback
+        )
         self.aimed = 0.5
         self.last_time = -2.0
 
@@ -25,6 +28,10 @@ class Aim:
         self.last_time = time.time()
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
+
+    def not_aimed_callback(self, sample: zenoh.Sample):
+        self.last_time = time.time()
+        self.aimed = 0.9
 
     def pub_twist(self, linear, angular):
 
@@ -39,12 +46,17 @@ class Aim:
         if time.time() - self.last_time > 0.4:
             return
 
-        if self.aimed > 0.5 - self.deadzone / 2:
-            self.pub_twist(0.0, 1.0 * self.angular_scale)
-        elif self.aimed < 0.5 + self.deadzone / 2:
-            self.pub_twist(0.0, -1.0 * self.angular_scale)
-        else:
+        if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(0.0, 0.0)
+        else:
+            intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
+                0.5 - self.deadzone / 2.0
+            )
+
+            if self.aimed > 0.5:
+                self.pub_twist(0.0, intensity * self.angular_scale)
+            else:
+                self.pub_twist(0.0, -intensity * self.angular_scale)
 
     def destroy(self):
         self.sub.undeclare()
