@@ -20,9 +20,8 @@ class Aim:
         # print(data.get("name"), self.aimed_object_list)
         if data.get("name") in self.aimed_object_list:
             self.session.put("robot/aimed", sample.payload)
-            print("AIIIIIMED")
         elif len(self.aimed_object_list) == 0:
-            self.session.put("robot/nothing_to_aimed", sample.payload)
+            return
         else:
             self.session.put("robot/not_aimed", sample.payload)
 

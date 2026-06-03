@@ -22,9 +22,6 @@ class Aim:
         self.sub2 = self.session.declare_subscriber(
             "robot/not_aimed", self.not_aimed_callback
         )
-        self.sub3 = self.session.declare_subscriber(
-            "robot/nothing_to_aimed", self.nothing_to_aimed_callback
-        )
 
         self.sub_lat = self.session.declare_subscriber(
             "robot/config/latency", self.latency_callback
@@ -35,8 +32,6 @@ class Aim:
 
         self.aimed = 0.5
         self.last_action_time = time.time()
-        self.last_movement = time.time()
-        self.last_time = 0.0
 
     def latency_callback(self, sample: zenoh.Sample):
         self.latency = float(sample.payload.to_bytes().decode("utf-8")) / 1000
@@ -50,59 +45,31 @@ class Aim:
         current_time = time.time()
         # print("AIIIIIMED")
 
-        # self.last_time = current_time
-
         # self.aimed_time = time.time()
-        print(round(current_time - self.last_action_time, 2), self.latency)
         if current_time - self.last_action_time < self.latency:
             return
 
         self.last_action_time = current_time
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
-        print("AIIIIIMED", self.aimed, data.get("normalized_center")[0])
 
     def not_aimed_callback(self, sample: zenoh.Sample):
-        #     current_time = time.time()
+        current_time = time.time()
         #     self.last_time = current_time
         #     if current_time - self.aimed_time > 0.1:
         #         return
-        #     if 0.05 < current_time - self.last_action_time < self.latency:
-        #         self.aimed = 0.5
-        #         return
         print("NOOOOOOOOOOOOO")
-        #     self.last_action_time = current_time
-        #     self.aimed = 0.9
-        self.aimed = 0.5
-
-    def nothing_to_aimed_callback(self, sample: zenoh.Sample):
-        #     current_time = time.time()
-        #     self.last_time = current_time
-        print("nta")
-        self.aimed = 0.5
-
-    def pub_twist(self, linear, angular):
-        current_time = time.time()
-        if angular == 0 and linear == 0:
+        if current_time - self.last_action_time < self.latency:
             return
-        if current_time - self.last_movement < 0.1:
-            return
-        print("move", linear, angular)
-        self.last_movement = current_time
-        self.aimed = 0.5
-        return
-        t = Twist(
-            linear=Vector3(x=float(linear), y=0.0, z=0.0),
-            angular=Vector3(x=0.0, y=0.0, z=float(angular)),
-        )
-        self.session.put(self.cmd_vel_topic, t.serialize())
-        return
+
+        self.last_action_time = current_time
+
+        self.aimed = 0.9
 
     def move(self):
 
-        # if time.time() - self.last_time > self.latency + 0.4:
-        #     return
-        print("MOVE", self.aimed)
+        if time.time() - self.last_action_time > 0.4:
+            return
         if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(0.0, 0.0)
         else:
@@ -116,11 +83,24 @@ class Aim:
             else:
                 self.pub_twist(0.0, -intensity * self.angular_scale)
 
+    def pub_twist(self, linear, angular):
+        current_time = time.time()
+        if angular == 0 and linear == 0:
+            return
+        print("move", linear, angular)
+        self.aimed = 0.5
+        return
+        t = Twist(
+            linear=Vector3(x=float(linear), y=0.0, z=0.0),
+            angular=Vector3(x=0.0, y=0.0, z=float(angular)),
+        )
+        self.session.put(self.cmd_vel_topic, t.serialize())
+        return
+
     def destroy(self):
         # On nettoie proprement les souscriptions
         self.sub.undeclare()
         self.sub2.undeclare()
-        self.sub3.undeclare()
         self.sub_lat.undeclare()
         self.sub_sens.undeclare()
         self.session.close()
