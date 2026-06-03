@@ -12,7 +12,7 @@ import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from sound.sound import play_sound
+
 from video.web_display_video import display_video_stream
 from control.web_teleop import TeleopManager
 
@@ -96,11 +96,13 @@ async def clear_aimed_objects():
     video.forwarder.aim.remove_all_aimed_objects()
     return {"status": "success", "message": "Cleared all aimed objects from the list"}
 
+
 @app.post("/klaxon")
 async def activate_klaxon():
     print("[INFO] Klaxon command via Zenoh requested")
     teleop.pub_bip(1)
     return {"status": "success", "action": "klaxon"}
+
 
 @app.get("/")
 def serve_home():
