@@ -36,6 +36,8 @@ class Aim:
 
     def state_callback(self, sample: zenoh.Sample):
         self.robot_state = sample.payload.to_bytes().decode("utf-8")
+        self.aimed = 2.0
+        self.last_action_time = time.time()
         print(f"État du robot mis à jour: {self.robot_state}")
 
     def latency_callback(self, sample: zenoh.Sample):
