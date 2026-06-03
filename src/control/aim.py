@@ -55,7 +55,6 @@ class Aim:
         # self.aimed_time = time.time()
         print(round(current_time - self.last_action_time, 2), self.latency)
         if current_time - self.last_action_time < self.latency:
-            self.aimed = 0.5
             return
 
         self.last_action_time = current_time
@@ -90,6 +89,7 @@ class Aim:
             return
         print("move", linear, angular)
         self.last_movement = current_time
+        self.aimed = 0.5
         return
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
@@ -102,7 +102,7 @@ class Aim:
 
         # if time.time() - self.last_time > self.latency + 0.4:
         #     return
-
+        print("MOVE", self.aimed)
         if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(0.0, 0.0)
         else:
