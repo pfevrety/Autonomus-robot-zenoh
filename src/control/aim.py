@@ -77,7 +77,7 @@ class Aim:
         self.aimed = 0.5
 
     def pub_twist(self, linear, angular):
-        print("move4")
+        print("move4", angular)
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular)),
@@ -97,6 +97,7 @@ class Aim:
             intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
                 0.5 - self.deadzone / 2.0
             )
+            print(intensity)
 
             if self.aimed > 0.5:
                 self.pub_twist(0.0, intensity * self.angular_scale)
