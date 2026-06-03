@@ -12,7 +12,7 @@ class Aim:
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
         self.deadzone = 0.2
-        self.latency = 0.5
+        self.latency = 2
 
         conf = zenoh.Config()
         zenoh.init_log_from_env_or("error")
@@ -52,6 +52,7 @@ class Aim:
         # self.last_time = current_time
 
         # self.aimed_time = time.time()
+        print(current_time - self.last_action_time, self.latency)
         if current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
             return
