@@ -88,7 +88,7 @@ class Aim:
         self.session.put(self.cmd_vel_topic, t.serialize())
 
     def move(self):
-        print("move1", self.aimed)
+
         if time.time() - self.last_time > self.latency + 0.4:
             return
 
