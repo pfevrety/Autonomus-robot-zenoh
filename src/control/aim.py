@@ -61,7 +61,7 @@ class Aim:
         self.last_action_time = current_time
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
-        # print("AIIIIIMED", self.aimed, data.get("normalized_center")[0])
+        print("AIIIIIMED", self.aimed, data.get("normalized_center")[0])
 
     def not_aimed_callback(self, sample: zenoh.Sample):
         #     current_time = time.time()
@@ -109,7 +109,7 @@ class Aim:
             intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
                 0.5 - self.deadzone / 2.0
             )
-            # print(intensity)
+            print("I", intensity)
 
             if self.aimed > 0.5:
                 self.pub_twist(0.0, intensity * self.angular_scale)
