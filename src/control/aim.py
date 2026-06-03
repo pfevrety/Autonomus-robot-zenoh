@@ -50,7 +50,7 @@ class Aim:
         current_time = time.time()
 
         self.last_time = current_time
-        print("AIIIIIMED", self.aimed)
+
         self.aimed_time = time.time()
         if current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
@@ -60,6 +60,7 @@ class Aim:
         self.last_action_time = current_time
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
+        print("AIIIIIMED", self.aimed)
 
     def not_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
