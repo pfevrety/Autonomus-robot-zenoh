@@ -48,6 +48,7 @@ class Aim:
 
     def box_callback(self, sample: zenoh.Sample):
         current_time = time.time()
+        print("AIIIIIMED")
 
         self.last_time = current_time
 
