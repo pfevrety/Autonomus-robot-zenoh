@@ -53,7 +53,7 @@ class Aim:
         # self.last_time = current_time
 
         # self.aimed_time = time.time()
-        print(current_time - self.last_action_time, self.latency)
+        print(round(current_time - self.last_action_time, 2), self.latency)
         if current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
             return
