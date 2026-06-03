@@ -56,11 +56,10 @@ class Aim:
             self.aimed = 0.5
             return
 
-        # Si le temps est écoulé, on traite l'image et on réinitialise le chrono
         self.last_action_time = current_time
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
-        print("AIIIIIMED", self.aimed)
+        print("AIIIIIMED", self.aimed, data.get("normalized_center")[0])
 
     def not_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
