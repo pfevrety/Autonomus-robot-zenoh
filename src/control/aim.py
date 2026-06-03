@@ -39,7 +39,7 @@ class Aim:
         self.last_time = -2.0
 
     def latency_callback(self, sample: zenoh.Sample):
-        self.latency = float(sample.payload.to_bytes().decode("utf-8"))
+        self.latency = float(sample.payload.to_bytes().decode("utf-8")) / 1000
         print(f"Latence mise à jour: {self.latency}s")
 
     def sensitivity_callback(self, sample: zenoh.Sample):
