@@ -15,6 +15,14 @@ from sound.sound import play_sound
 from video.web_display_video import display_video_stream
 from control.web_teleop import TeleopManager
 
+<<<<<<< HEAD
+=======
+# --- IMPORT AIM HERE ---
+# Adjust the import path depending on where aim.py is located.
+# If it's in the same directory, use: from aim import aim
+import video.forwarder
+
+>>>>>>> 9653aa1 (patch aim)
 process_detection = None
 teleop = TeleopManager()
 
@@ -24,20 +32,14 @@ async def lifespan(app: FastAPI):
     global process_detection
 
     print("[INFO] subprocess detect_objects.py started...")
-    process_detection = subprocess.Popen(
-        ["python", "./src/video/detect_objects.py", "-e", "tcp/127.0.0.1:7447"],
-        shell=False,
-    )
+    # process_detection = subprocess.Popen(
+    #     ["python", "./src/video/detect_objects.py", "-e", "tcp/127.0.0.1:7447"],
+    #     shell=False,
+    # )
 
     yield
 
     print("\n[INFO] stopping server")
-
-    # try:
-    #     aim.destroy()
-    #     print("[INFO] Zenoh subscriber destroyed safely.")
-    # except Exception as e:
-    #     print(f"[ERROR] Failed to destroy Zenoh session: {e}")
 
     if process_detection:
         process_detection.terminate()
@@ -75,21 +77,26 @@ async def receive_command(request: Request):
 app.mount("/scripts", StaticFiles(directory="website/scripts"), name="script")
 app.mount("/styles", StaticFiles(directory="website/styles"), name="style")
 
-# @app.post("/add_aimed_object")
-# async def add_aimed_object(request: Request):
-#     data = await request.json()
-#     object_name = data.get("object_name")
 
-#     if object_name:
-#         aim.add_aimed_object(object_name)
-#         return {"status": "success", "message": f"Added {object_name} to aimed objects list"}
-#     else:
-#         return {"status": "error", "message": "No object name provided"}
+@app.post("/add_aimed_object")
+async def add_aimed_object(request: Request):
+    data = await request.json()
+    object_name = data.get("object_name")
 
-# @app.post("/clear_aimed_objects")
-# async def clear_aimed_objects():
-#     aim.remove_all_aimed_objects()
-#     return {"status": "success", "message": "Cleared all aimed objects from the list"}
+    if object_name:
+        video.forwarder.aim.add_aimed_object(object_name)
+        return {
+            "status": "success",
+            "message": f"Added {object_name} to aimed objects list",
+        }
+    else:
+        return {"status": "error", "message": "No object name provided"}
+
+
+@app.post("/clear_aimed_objects")
+async def clear_aimed_objects():
+    video.forwarder.aim.remove_all_aimed_objects()
+    return {"status": "success", "message": "Cleared all aimed objects from the list"}
 
 @app.post("/klaxon")
 async def activate_klaxon():
