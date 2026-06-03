@@ -29,7 +29,7 @@ class Aim:
             "robot/config/sensitivity", self.sensitivity_callback
         )
 
-        self.aimed = 0.5
+        self.aimed = 2.0
         self.robot_state = "WAIT"
 
         self.last_action_time = time.time()
@@ -69,6 +69,7 @@ class Aim:
 
         if time.time() - self.last_action_time > 0.4:
             return
+        print(self.aimed, self.robot_state)
         if self.aimed == 2.0:
             if self.robot_state == "SEARCHING":
                 print(f"Recherche en cours...")
