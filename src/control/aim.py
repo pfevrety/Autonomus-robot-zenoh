@@ -63,7 +63,7 @@ class Aim:
     def not_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
         self.last_time = current_time
-        if current_time - self.last_action_time < self.latency:
+        if 0.05 < current_time - self.last_action_time < self.latency:
             self.aimed = 0.5
             return
         print("ACTIOOOOON")
@@ -77,7 +77,6 @@ class Aim:
         self.aimed = 0.5
 
     def pub_twist(self, linear, angular):
-        print("move4", angular)
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular)),
@@ -89,11 +88,9 @@ class Aim:
         if time.time() - self.last_time > self.latency + 0.4:
             return
 
-        print("move2")
         if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(0.0, 0.0)
         else:
-            print("move3")
             intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
                 0.5 - self.deadzone / 2.0
             )
