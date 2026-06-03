@@ -71,6 +71,7 @@ class Aim:
             return
         if self.aimed == 2.0:
             if self.robot_state == "SEARCHING":
+                print(f"Recherche en cours...")
                 self.not_box_callback()
             else:
                 return
