@@ -21,12 +21,20 @@ class Aim:
         self.session = zenoh.open(conf)
 
         self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
-        self.sub = self.session.declare_subscriber(
+        self.sub2 = self.session.declare_subscriber(
             "robot/not_aimed", self.not_aimed_callback
         )
-        self.sub = self.session.declare_subscriber(
+        self.sub3 = self.session.declare_subscriber(
             "robot/nothing_to_aimed", self.nothing_to_aimed_callback
         )
+
+        self.sub_lat = self.session.declare_subscriber(
+            "robot/config/latency", self.latency_callback
+        )
+        self.sub_sens = self.session.declare_subscriber(
+            "robot/config/sensitivity", self.sensitivity_callback
+        )
+
         self.aimed = 0.5
         self.last_time = -2.0
 
@@ -44,7 +52,6 @@ class Aim:
         self.last_time = current_time
 
         if current_time - self.last_action_time < self.latency:
-            self.aimed = 0.5
             return
 
         # Si le temps est écoulé, on traite l'image et on réinitialise le chrono
@@ -53,18 +60,23 @@ class Aim:
         self.aimed = data.get("normalized_center")[0]
 
     def not_aimed_callback(self, sample: zenoh.Sample):
-        self.last_time = time.time()
+        current_time = time.time()
+        self.last_time = current_time
+
+        if current_time - self.last_action_time < self.latency:
+            return
+
+        self.last_action_time = current_time
         self.aimed = 0.9
-
-    def nothing_to_aimed_callback(self, sample: zenoh.Sample):
-        self.last_time = time.time()
-        self.aimed = 0.5
-
-    def pub_twist(self, linear, angular):
 
     def nothing_to_aimed_callback(self, sample: zenoh.Sample):
         current_time = time.time()
         self.last_time = current_time
+
+        if current_time - self.last_action_time < self.latency:
+            return
+
+        self.last_action_time = current_time
         self.aimed = 0.5
 
     def pub_twist(self, linear, angular):
@@ -98,16 +110,3 @@ class Aim:
         self.sub_lat.undeclare()
         self.sub_sens.undeclare()
         self.session.close()
-
-
-print("Starting...")
-aim = Aim()
-try:
-    print("Started Aim Successfully")
-    while True:
-        aim.move()
-        time.sleep(0.1)
-except KeyboardInterrupt:
-    print("Shutting down...")
-finally:
-    aim.destroy()
