@@ -93,7 +93,7 @@ if picamera:
     # 1. HARDWARE SELECTION: Force a high framerate (e.g., 90 or 120 FPS)
     # 2. HARDWARE TRANSFORMS: Let the camera sensor handle the vertical flip (vflip)
     config = vs.create_video_configuration(
-        main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB8888"},
+        main={"size": (args.width, int(args.width * 0.75)), "format": "XRGB888"},
         controls={"FrameRate": 90.0}, # Adjust based on your module (90 for v2, 120 for v3)
         transform=Transform(vflip=True)
     )
