@@ -82,7 +82,7 @@ class Aim:
         else:
             self.robot_state = AimState.AIMING
 
-    def move(self):
+    def choose_move_order(self):
         if self.robot_state == AimState.STOPPED:
             self.do_twist(0.0, 0.0, 1.0)
 
@@ -104,24 +104,24 @@ class Aim:
         self.last_moved_time = time.time()
 
     def do_twist(self, linear, angular, execute_time):
+        self.execute_time = execute_time
         if angular == 0 and linear == 0:
-            return
-        
-        print("\nmove", linear, angular)
+            execute_time = 0.0
+
+        print("\nmove order", linear, angular)
 
         self.last_twist = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular))
         )
 
-        self.execute_time = execute_time
 
     def send_twist(self):
         if time.time() - self.last_moved_time < self.execute_time: #waiting for latency before moving again
             self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
     
     def update(self):
-        self.move()
+        self.choose_move_order()
         self.send_twist()
         time.sleep(0.01)
 
