@@ -21,7 +21,7 @@ parser.add_argument(
 )
 parser.add_argument("-w", "--width", type=int, default=1024)
 parser.add_argument("-q", "--quality", type=int, default=80) 
-parser.add_argument("-d", "--delay", type=float, default=0.02)
+parser.add_argument("-d", "--delay", type=float, default=0.1)
 parser.add_argument("-p", "--prefix", default="demo/obj-detect")
 parser.add_argument("-c", "--config")
 
