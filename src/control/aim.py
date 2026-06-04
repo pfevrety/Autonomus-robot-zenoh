@@ -96,7 +96,8 @@ class Aim:
             return
 
         if self.robot_state == AimState.SEARCHING:
-            self.aimed = 0.9
+            self.aimed = 1.0
+            self.intensity = 3.0
 
         if self.robot_state == AimState.AIMING or self.robot_state == AimState.SEARCHING:
             sign = 1 if self.aimed > 0.5 else -1
