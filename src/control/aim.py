@@ -10,6 +10,9 @@ DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.5
 DEFAULT_TURNING_TIME = 0.1
 SEARCH_AGAIN_TIME = 1.5
+BEEP_WAIT = 2.0
+DEADZONE = 0.2
+DEFAULT_LATENCY = 2.0
 
 class Aim:
     def __init__(
@@ -18,8 +21,8 @@ class Aim:
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
-        self.deadzone = 0.2
-        self.latency = 2.5
+        self.deadzone = DEADZONE
+        self.latency = DEFAULT_LATENCY
         self.aimed = 0.5
         self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
@@ -77,7 +80,7 @@ class Aim:
                 self.robot_state = AimState.STOPPED
                 self.do_twist(0.0, 0.0, 1.0) # pause immediately even though there's a time.sleep
                 self.send_twist()
-                time.sleep(1.0) # Wait for Beep Port to be available
+                time.sleep(BEEP_WAIT) # Wait for Beep Port to be available
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
                 self.session.put("robot/found_object", self.searched_object.encode())
             else:
@@ -105,10 +108,9 @@ class Aim:
             self.robot_state = AimState.SEARCHING
 
         if self.robot_state == AimState.SEARCHING:
-            self.aimed = 1.0
-            self.intensity = 1.0
+            self.do_twist(0.0, self.angular_scale, DEFAULT_TURNING_TIME * 4)
 
-        if self.robot_state == AimState.AIMING or self.robot_state == AimState.SEARCHING:
+        if self.robot_state == AimState.AIMING:
             sign = 1 if self.aimed > 0.5 else -1
             self.do_twist(0.0, sign * self.intensity * self.angular_scale, DEFAULT_TURNING_TIME)
 
