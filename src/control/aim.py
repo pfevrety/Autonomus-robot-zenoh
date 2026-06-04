@@ -9,7 +9,7 @@ DEFAULT_LINEAR_SCALE = 20.0
 DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.5
 DEFAULT_TURNING_TIME = 0.1
-SEARCH_AGAIN_TIME = 3.5
+SEARCH_AGAIN_TIME = 1.5
 
 class Aim:
     def __init__(
@@ -98,11 +98,11 @@ class Aim:
 
         now = time.time()
 
-        if now - self.last_received_time > self.latency + SEARCH_AGAIN_TIME and self.robot_state == AimState.AIMING or self.robot_state == AimState.ADVANCING:
-            self.robot_state = AimState.SEARCHING
-
         if now - self.last_moved_time < self.latency: #waiting for latency before moving again
             return
+        
+        if now - self.last_received_time > self.latency + SEARCH_AGAIN_TIME and self.robot_state == AimState.AIMING and self.robot_state == AimState.ADVANCING:
+            self.robot_state = AimState.SEARCHING
 
         if self.robot_state == AimState.SEARCHING:
             self.aimed = 1.0
