@@ -20,6 +20,9 @@ python3 video/capture_video.py -a picamera -e tcp/$GIVEN_IP:7447 -w 512 -q 70
 echo "Starting zdrive.py"
 python ./motor/zdrive.py &
 
+echo "Starting sound.py"
+python ./sound/sound.py &
+
 echo "Everything started succesfully"
 echo "Don't forget to start the zenoh router."
 
