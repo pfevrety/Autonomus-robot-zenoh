@@ -5,7 +5,7 @@ import time
 from aimstate import AimState
 
 STOP_SIZE = 0.7
-DEFAULT_LINEAR_SCALE = 40.0
+DEFAULT_LINEAR_SCALE = 20.0
 DEFAULT_ANGULAR_SCALE = 200.0
 
 class Aim:
@@ -92,6 +92,8 @@ class Aim:
             self.pub_twist(0.0, sign * intensity * self.angular_scale)
 
         if self.robot_state == AimState.ADVANCING:
+            self.pub_twist(-self.linear_scale, 0.0)
+            self.pub_twist(-self.linear_scale, 0.0)
             self.pub_twist(-self.linear_scale, 0.0)
 
 
