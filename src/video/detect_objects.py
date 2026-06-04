@@ -188,5 +188,4 @@ while True:
 
     # time.sleep(args.delay)
 
-vs.stop()
 z.close()

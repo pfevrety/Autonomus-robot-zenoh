@@ -2,15 +2,9 @@ import zenoh
 from common import *
 import json
 import time
-from enum import IntEnum
-
+from aimstate import AimState
 
 class Aim:
-    class AimState(IntEnum):
-        STOPPED = 0
-        SEARCHING = 1
-        ADVANCING = 2
-
     def __init__(
         self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=200.0
     ):
@@ -20,7 +14,7 @@ class Aim:
         self.deadzone = 0.2
         self.latency = 1
         self.aimed = 0.5
-        self.robot_state = self.AimState.STOPPED
+        self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
 
         self.searched_object = ""
@@ -36,7 +30,10 @@ class Aim:
         self.sub_sens = self.session.declare_subscriber("robot/config/sensitivity", self.sensitivity_callback)        
 
     def state_callback(self, sample: zenoh.Sample):
-        self.robot_state = self.AimState(sample.payload.to_bytes())
+        if sample.payload.to_bytes(): #check for true or false (technically checking if null or not, but it's the same)
+            self.robot_state = AimState.SEARCHING
+        else:
+            self.robot_state = AimState.STOPPED
         print(f"État du robot mis à jour à distance: {self.robot_state}")
 
     def latency_callback(self, sample: zenoh.Sample):
@@ -52,19 +49,19 @@ class Aim:
         self.searched_object = data.get("name")
         self.aimed = data.get("normalized_center")[0]
 
-        if self.robot_state == self.AimState.SEARCHING and abs(self.aimed - 0.5) < self.deadzone / 2:
+        if self.robot_state == AimState.SEARCHING and abs(self.aimed - 0.5) < self.deadzone / 2:
             pass #advance or beep
             #check for size -> if big enough -> beep
             #               -> if not big enough -> advance (handle disappearing objects)
 
     def move(self):
-        if self.robot_state == self.AimState.STOPPED:
+        if self.robot_state == AimState.STOPPED:
             return
 
         if time.time() - self.last_moved_time < self.latency: #waiting for latency before moving again
             return
 
-        if self.robot_state == self.AimState.SEARCHING:
+        if self.robot_state == AimState.SEARCHING:
             self.aimed = 0.9
         
         intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
@@ -79,7 +76,7 @@ class Aim:
         
         print("\nmove", linear, angular)
 
-        self.robot_state = self.AimState.STOPPED
+        self.robot_state = AimState.STOPPED
 
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
@@ -93,7 +90,7 @@ class Aim:
         time.sleep(0.01)
     
     def found_object(self):
-        self.robot_state = self.AimState.STOPPED
+        self.robot_state = AimState.STOPPED
 
         self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
         self.session.put("robot/found_object", self.searched_object.encode())
@@ -106,13 +103,14 @@ class Aim:
         self.session.close()
 
 
-print("Starting Aim...")
-aim = Aim()
-try:
-    print("Started Aim Successfully")
-    while True:
-        aim.update()
-except KeyboardInterrupt:
-    print("Shutting down...")
-finally:
-    aim.destroy()
+if __name__ == "__main__":
+    print("Starting Aim...")
+    aim = Aim()
+    try:
+        print("Started Aim Successfully")
+        while True:
+            aim.update()
+    except KeyboardInterrupt:
+        print("Shutting down...")
+    finally:
+        aim.destroy()

@@ -15,12 +15,12 @@ class Forwarder:
         self.update_state()
 
     def update_state(self):
-        state = "SEARCHING" if len(self.aimed_object_list) > 0 else "WAIT"
-        self.session.put("robot/state", state)
+        state = True if len(self.aimed_object_list) > 0 else False
+        self.session.put("robot/state", bytes(state))
 
     def objects_callback(self, sample: zenoh.Sample):
         data = json.loads(sample.payload.to_bytes())
-        if data.get("name") == self.aimed_object_list[0]:
+        if len(self.aimed_object_list) > 0 and data.get("name") == self.aimed_object_list[0]:
             self.session.put("robot/aimed", sample.payload)
 
     def add_aimed_object(self, object_name):
@@ -47,14 +47,13 @@ class Forwarder:
         self.sub.undeclare()
         self.session.close()
 
-
-"""forwarder = Forwarder()
-try:
-    print("Started Forwarder Successfully")
-    while True:
-        time.sleep(0.1)
-except KeyboardInterrupt:
-    print("Shutting down...")
-finally:
-    forwarder.destroy()
-"""
+if __name__ == "__main__":
+    forwarder = Forwarder()
+    try:
+        print("Started Forwarder Successfully")
+        while True:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Shutting down...")
+    finally:
+        forwarder.destroy()
