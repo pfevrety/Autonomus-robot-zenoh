@@ -53,7 +53,7 @@ parser.add_argument(
     "-d",
     "--delay",
     type=float,
-    default=0.1,
+    default=0.01,
     help="delay between each iteration in seconds",
 )
 parser.add_argument(

@@ -7,6 +7,8 @@ from aimstate import AimState
 STOP_SIZE = 0.7
 DEFAULT_LINEAR_SCALE = 20.0
 DEFAULT_ANGULAR_SCALE = 200.0
+DEFAULT_ADVANCE_TIME = 0.5
+DEFAULT_TURNING_TIME = 0.1
 
 class Aim:
     def __init__(
@@ -20,6 +22,11 @@ class Aim:
         self.aimed = 0.5
         self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
+        self.last_twist = Twist(
+            linear=Vector3(x=0.0, y=0.0, z=0.0),
+            angular=Vector3(x=0.0, y=0.0, z=0.0)
+        )
+        self.execute_time = 0.0
 
         self.searched_object = ""
 
@@ -77,7 +84,7 @@ class Aim:
 
     def move(self):
         if self.robot_state == AimState.STOPPED:
-            return
+            self.do_twist(0.0, 0.0, 1.0)
 
         if time.time() - self.last_moved_time < self.latency: #waiting for latency before moving again
             return
@@ -89,33 +96,33 @@ class Aim:
             intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
             sign = 1 if self.aimed > 0.5 else -1
 
-            self.pub_twist(0.0, sign * intensity * self.angular_scale)
+            self.do_twist(0.0, sign * intensity * self.angular_scale, DEFAULT_TURNING_TIME)
 
         if self.robot_state == AimState.ADVANCING:
-            self.pub_twist(-self.linear_scale, 0.0)
-            time.sleep(0.1)
-            self.pub_twist(-self.linear_scale, 0.0)
-            time.sleep(0.1)
-            self.pub_twist(-self.linear_scale, 0.0)
-
+            self.do_twist(-self.linear_scale, 0.0, DEFAULT_ADVANCE_TIME)
 
         self.last_moved_time = time.time()
 
-    def pub_twist(self, linear, angular):
+    def do_twist(self, linear, angular, execute_time):
         if angular == 0 and linear == 0:
             return
         
         print("\nmove", linear, angular)
 
-        t = Twist(
+        self.last_twist = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular))
         )
 
-        self.session.put(self.cmd_vel_topic, t.serialize())
+        self.execute_time = execute_time
+
+    def send_twist(self):
+        if time.time() - self.last_moved_time < self.execute_time: #waiting for latency before moving again
+            self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
     
     def update(self):
         self.move()
+        self.send_twist()
         time.sleep(0.01)
 
     def destroy(self):
