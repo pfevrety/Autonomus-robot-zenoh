@@ -21,7 +21,7 @@ echo "Starting zdrive.py"
 python ./motor/zdrive.py &
 
 echo "Starting aim.py"
-python ./motor/aim.py &
+python ./control/aim.py &
 
 echo "Everything started succesfully"
 echo "Don't forget to start the zenoh router."
