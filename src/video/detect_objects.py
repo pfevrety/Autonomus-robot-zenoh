@@ -131,12 +131,14 @@ while True:
     for cam in list(cams):
         if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
             del cams[cam]
+
     for cam in list(cams):
         npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
 
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
+
         for result in results:
             for box in result.boxes:
                 for data in box.data:
@@ -161,6 +163,10 @@ while True:
                         object_name, center, smoothed_confidence
                     )
                     hauteur, largeur = matImage.shape[:2]
+
+                    object_width = data[2] - data[0]
+                    normalized_width = object_width / largeur
+
                     z.put(
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
                         json.dumps(
@@ -174,6 +180,8 @@ while True:
                                     smoothed_center[0] / largeur,
                                     smoothed_center[1] / hauteur,
                                 ],
+                                "width": int(object_width),
+                                "normalized_width": float(normalized_width),
                             }
                         ),
                     )
