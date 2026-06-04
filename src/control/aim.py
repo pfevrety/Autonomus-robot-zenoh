@@ -4,9 +4,13 @@ import json
 import time
 from aimstate import AimState
 
+STOP_SIZE = 0.7
+DEFAULT_LINEAR_SCALE = 40.0
+DEFAULT_ANGULAR_SCALE = 200.0
+
 class Aim:
     def __init__(
-        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=200.0
+        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=DEFAULT_LINEAR_SCALE, angular_scale=DEFAULT_ANGULAR_SCALE
     ):
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale
@@ -58,7 +62,7 @@ class Aim:
 
             # print(f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}")
 
-            if normalized_width > 0.7 or normalized_height > 0.7:
+            if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
                 self.robot_state = AimState.STOPPED
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
                 self.session.put("robot/found_object", self.searched_object.encode())
