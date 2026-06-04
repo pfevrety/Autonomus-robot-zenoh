@@ -1,6 +1,5 @@
 import argparse
 import json
-import queue
 import random
 import threading
 import time
@@ -20,7 +19,7 @@ parser.add_argument(
     "-a", "--camera", default="default", choices=["default", "picamera"]
 )
 parser.add_argument("-w", "--width", type=int, default=1024)
-parser.add_argument("-q", "--quality", type=int, default=80) 
+parser.add_argument("-q", "--quality", type=int, default=80)
 parser.add_argument("-d", "--delay", type=float, default=0.1)
 parser.add_argument("-p", "--prefix", default="demo/obj-detect")
 parser.add_argument("-c", "--config")
@@ -46,24 +45,29 @@ print("[INFO] Open zenoh session...")
 zenoh.init_log_from_env_or("error")
 z = zenoh.open(conf)
 
-frame_queue = queue.Queue(maxsize=2)
+latest_frame = None
+frame_lock = threading.Lock()
+frame_event = threading.Event()
 running = True
 
 
 def processing_thread(zenoh_session, key, opts):
     while running:
-        try:
-            frame = frame_queue.get(timeout=1.0)
-            if frame is None:
-                continue
+        if not frame_event.wait(timeout=1.0):
+            continue
 
+        frame_event.clear()
+
+        with frame_lock:
+            frame = latest_frame
+
+        if frame is None:
+            continue
+
+        try:
             success, jpeg = cv2.imencode(".jpg", frame, opts)
             if success:
                 zenoh_session.put(key, jpeg.tobytes())
-
-            frame_queue.task_done()
-        except queue.Empty:
-            continue
         except Exception as e:
             print(f"[ERROR] Thread processing: {e}")
 
@@ -107,17 +111,15 @@ try:
                 continue
             frame = imutils.resize(raw, width=args.width)
 
-        if not frame_queue.full():
-            frame_queue.put_nowait(frame)
-        else:
-            pass
+        with frame_lock:
+            latest_frame = frame
+        frame_event.set()
 
         time.sleep(args.delay)
 
 except KeyboardInterrupt:
     print("[INFO] Interruption demandée...")
 
-# Nettoyage propre
 running = False
 sender_thread.join(timeout=2.0)
 vs.stop()
