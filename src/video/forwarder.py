@@ -11,6 +11,7 @@ class Aim:
         self.sub = self.session.declare_subscriber(
             "**/objects/**", self.objects_callback
         )
+        self.sub_found_object = self.session.declare_subscriber("robot/found_object", self.found_object_callback)
         self.aimed_object_list = []
         self.update_state()
 
@@ -39,6 +40,9 @@ class Aim:
         self.aimed_object_list.clear()
         print("Cleared all aimed objects from the list")
         self.update_state()
+
+    def found_object_callback(self, sample: zenoh.Sample):
+        self.remove_aimed_object(sample.payload.to_string())
 
     def destroy(self):
         self.sub.undeclare()

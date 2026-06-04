@@ -56,6 +56,7 @@ class Aim:
         self.last_action_time = current_time
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
+        self.searched_object = data.get("name")
 
     def not_box_callback(self):
         current_time = time.time()
@@ -77,9 +78,7 @@ class Aim:
         if self.aimed == 2.0:
             return
         elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
-            self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
-            self.aimed = 2.0
-            # ICIIIIIIIIIIIIIIIIIIII
+            self.found_object()
         else:
             intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
 
@@ -100,6 +99,11 @@ class Aim:
         )
         self.session.put(self.cmd_vel_topic, t.serialize())
         return
+    
+    def found_object(self):
+        self.aimed = 2.0
+        self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+        self.session.put("robot/found_object", self.searched_object.encode("utf-8"))
 
     def destroy(self):
         self.sub.undeclare()
