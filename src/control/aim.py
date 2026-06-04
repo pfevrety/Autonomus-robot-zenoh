@@ -69,12 +69,12 @@ class Aim:
         if self.robot_state == AimState.SEARCHING:
             self.aimed = 0.9
 
-        if self.robot_state == AimState.AIMING:
+        if self.robot_state == AimState.AIMING or self.robot_state == AimState.SEARCHING:
             intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
             sign = -1 if self.aimed > 0.5 else 1
 
             self.pub_twist(0.0, sign * intensity * self.angular_scale)
-            
+
         self.last_moved_time = time.time()
 
     def pub_twist(self, linear, angular):
