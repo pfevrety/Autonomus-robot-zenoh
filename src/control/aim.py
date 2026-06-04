@@ -12,7 +12,7 @@ class Aim:
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
         self.deadzone = 0.2
-        self.latency = 1
+        self.latency = 2.5
         self.aimed = 0.5
         self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
@@ -51,7 +51,7 @@ class Aim:
 
         
         if abs(self.aimed - 0.5) < self.deadzone / 2:
-            box = data.get("box")
+            box = data.get("normalized_box")
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
 
