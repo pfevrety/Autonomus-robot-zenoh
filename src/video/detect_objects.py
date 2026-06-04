@@ -135,6 +135,7 @@ while True:
     for cam in list(cams):
         npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
+        matImage = cv2.cvtColor(matImage, cv2.COLOR_RGB2BGR)
 
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
