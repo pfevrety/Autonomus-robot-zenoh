@@ -104,7 +104,7 @@ class Aim:
         if now - self.last_moved_time < self.latency: #waiting for latency before moving again
             return
         
-        if now - self.last_received_time > self.latency + SEARCH_AGAIN_TIME and self.robot_state == AimState.AIMING and self.robot_state == AimState.ADVANCING:
+        if now - self.last_received_time > self.latency + SEARCH_AGAIN_TIME and (self.robot_state == AimState.AIMING or self.robot_state == AimState.ADVANCING):
             self.robot_state = AimState.SEARCHING
 
         if self.robot_state == AimState.SEARCHING:
