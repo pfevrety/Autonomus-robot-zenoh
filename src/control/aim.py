@@ -107,7 +107,8 @@ class Aim:
         self.execute_time = execute_time
         if angular == 0 and linear == 0:
             execute_time = 0.0
-
+            return
+        
         print("\nmove order", linear, angular)
 
         self.last_twist = Twist(
