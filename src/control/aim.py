@@ -9,6 +9,7 @@ DEFAULT_LINEAR_SCALE = 20.0
 DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.5
 DEFAULT_TURNING_TIME = 0.1
+SEARCH_AGAIN_TIME = 1
 
 class Aim:
     def __init__(
@@ -22,6 +23,7 @@ class Aim:
         self.aimed = 0.5
         self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
+        self.last_received_time = time.time()
         self.last_twist = Twist(
             linear=Vector3(x=0.0, y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=0.0)
@@ -62,6 +64,7 @@ class Aim:
         self.searched_object = data.get("name")
         self.aimed = data.get("normalized_center")[0]
 
+        self.last_received_time = time.time()
         
         if abs(self.aimed - 0.5) < self.deadzone / 2:
             box = data.get("normalized_box")
@@ -89,10 +92,16 @@ class Aim:
             self.intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
 
     def choose_move_order(self):
-        if self.robot_state == AimState.STOPPED:
-            self.do_twist(0.0, 0.0, 1.0)
 
-        if time.time() - self.last_moved_time < self.latency: #waiting for latency before moving again
+        if self.robot_state == AimState.STOPPED:
+            self.do_twist(0.0, 0.0, 1.0)    
+
+        now = time.time()
+
+        if now - self.last_received_time > self.latency + SEARCH_AGAIN_TIME and self.robot_state == AimState.AIMING or self.robot_state == AimState.ADVANCING:
+            self.robot_state = AimState.SEARCHING
+
+        if now - self.last_moved_time < self.latency: #waiting for latency before moving again
             return
 
         if self.robot_state == AimState.SEARCHING:
@@ -107,7 +116,7 @@ class Aim:
         if self.robot_state == AimState.ADVANCING:
             self.do_twist(-self.linear_scale, 0.0, DEFAULT_ADVANCE_TIME * self.intensity)
 
-        self.last_moved_time = time.time()
+        self.last_moved_time = now
 
     def do_twist(self, linear, angular, execute_time):
         self.execute_time = execute_time
