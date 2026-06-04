@@ -80,6 +80,7 @@ def frames_listener(sample):
     cams[cam]["img"] = bytes(sample.payload)
     cams[cam]["img_time"] = time.time()
 
+
 def smooth_detection(object_name, confidence):
     key = object_name
 
@@ -89,6 +90,7 @@ def smooth_detection(object_name, confidence):
     history_conf[key].append(confidence)
 
     return median(history_conf[key])
+
 
 def smooth_center_quadratic(object_name, center, confidence):
     if object_name not in history_center:
@@ -113,10 +115,8 @@ def smooth_center_quadratic(object_name, center, confidence):
     if total_weight == 0:
         return center
 
-    return [
-        int(weighted_x / total_weight),
-        int(weighted_y / total_weight)
-    ]
+    return [int(weighted_x / total_weight), int(weighted_y / total_weight)]
+
 
 print("[INFO] Open zenoh session...")
 
@@ -134,7 +134,6 @@ while True:
     for cam in list(cams):
         npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
-        matImage = cv2.cvtColor(matImage, cv2.COLOR_RGB2BGR)
 
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
@@ -151,21 +150,15 @@ while True:
                     confidence = float(data[4])
                     object_name = result.names[int(data[5])]
 
-                    smoothed_confidence = smooth_detection(
-                        object_name,
-                        confidence
-                    )
+                    smoothed_confidence = smooth_detection(object_name, confidence)
 
                     center = [
                         int((data[0] + data[2]) / 2),
                         int((data[1] + data[3]) / 2),
                     ]
 
-                
                     smoothed_center = smooth_center_quadratic(
-                        object_name,
-                        center,
-                        smoothed_confidence
+                        object_name, center, smoothed_confidence
                     )
                     hauteur, largeur = matImage.shape[:2]
                     z.put(
@@ -173,7 +166,7 @@ while True:
                         json.dumps(
                             {
                                 "name": object_name,
-                                "confiance": int(smoothed_confidence* 100),
+                                "confiance": int(smoothed_confidence * 100),
                                 "box": box,
                                 "raw_center": center,
                                 "center": smoothed_center,

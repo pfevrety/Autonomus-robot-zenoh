@@ -6,7 +6,7 @@ import time
 
 class Aim:
     def __init__(
-        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=120.0
+        self, cmd_vel_topic="rt/turtle1/cmd_vel", linear_scale=20.0, angular_scale=200.0
     ):
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale
@@ -78,6 +78,8 @@ class Aim:
             return
         elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+            self.aimed = 2.0
+            # ICIIIIIIIIIIIIIIIIIIII
         else:
             intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
 

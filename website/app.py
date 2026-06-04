@@ -23,7 +23,7 @@ import video.forwarder
 
 process_detection = None
 teleop = TeleopManager()
-ANGULAR_SCALE = 120
+ANGULAR_SCALE = 200
 LATENCY = 0.5
 
 
