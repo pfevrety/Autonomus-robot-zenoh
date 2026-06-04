@@ -44,8 +44,15 @@ class Aim:
 
         self.forward_speed = 0.5
         self.forward_duration = 0.3
-        self.is_moving_forward = False
         self.forward_start_time = 0.0
+
+        self.last_action_time = time.time()
+
+    def state_callback(self, sample: zenoh.Sample):
+        self.robot_state = sample.payload.to_bytes().decode("utf-8")
+        self.aimed = 2.0
+        self.last_action_time = time.time()
+        print(f"État du robot mis à jour: {self.robot_state}")
 
     def latency_callback(self, sample: zenoh.Sample):
         self.latency = float(sample.payload.to_bytes().decode("utf-8")) / 1000
@@ -61,7 +68,6 @@ class Aim:
             return
 
         self.last_action_time = current_time
-
         data = json.loads(sample.payload.to_bytes())
         self.aimed = data.get("normalized_center")[0]
         self.searched_object = data.get("name")
@@ -143,7 +149,6 @@ class Aim:
 
 print("Starting...")
 aim = Aim()
-
 try:
     print("Started Aim Successfully")
     while True:
