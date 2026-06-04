@@ -49,10 +49,15 @@ class Aim:
         self.searched_object = data.get("name")
         self.aimed = data.get("normalized_center")[0]
 
-        if self.robot_state == AimState.SEARCHING and abs(self.aimed - 0.5) < self.deadzone / 2:
-            pass #advance or beep
-            #check for size -> if big enough -> beep
-            #               -> if not big enough -> advance (handle disappearing objects)
+
+        self.robot_state = AimState.AIMING
+        if self.robot_state == AimState.SEARCHING:
+            if abs(self.aimed - 0.5) < self.deadzone / 2:
+                pass #advance or beep
+                #check for size -> if big enough -> beep
+                #               -> if not big enough -> advance (handle disappearing objects)
+            else:
+                self.robot_state = AimState.AIMING
 
     def move(self):
         if self.robot_state == AimState.STOPPED:
@@ -63,11 +68,13 @@ class Aim:
 
         if self.robot_state == AimState.SEARCHING:
             self.aimed = 0.9
-        
-        intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
-        sign = -1 if self.aimed > 0.5 else 1
 
-        self.pub_twist(0.0, sign * intensity * self.angular_scale)
+        if self.robot_state == AimState.AIMING:
+            intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
+            sign = -1 if self.aimed > 0.5 else 1
+
+            self.pub_twist(0.0, sign * intensity * self.angular_scale)
+            
         self.last_moved_time = time.time()
 
     def pub_twist(self, linear, angular):
@@ -75,7 +82,7 @@ class Aim:
             return
         
         print("\nmove", linear, angular)
-        
+
         t = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=float(angular))
