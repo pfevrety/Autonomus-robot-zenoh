@@ -2,16 +2,15 @@ import zenoh
 import json
 import time
 
-
-class Aim:
+class Forwarder:
     def __init__(self):
         conf = zenoh.Config()
         zenoh.init_log_from_env_or("error")
         self.session = zenoh.open(conf)
-        self.sub = self.session.declare_subscriber(
-            "**/objects/**", self.objects_callback
-        )
+
+        self.sub = self.session.declare_subscriber("**/objects/**", self.objects_callback)
         self.sub_found_object = self.session.declare_subscriber("robot/found_object", self.found_object_callback)
+        
         self.aimed_object_list = []
         self.update_state()
 
@@ -49,12 +48,13 @@ class Aim:
         self.session.close()
 
 
-aim = Aim()
-# try:
-#     print("Started Forwarder Successfully")
-#     while True:
-#         time.sleep(0.01)
-# except KeyboardInterrupt:
-#     print("Shutting down...")
-# finally:
-#     aim.destroy()
+"""forwarder = Forwarder()
+try:
+    print("Started Forwarder Successfully")
+    while True:
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("Shutting down...")
+finally:
+    forwarder.destroy()
+"""

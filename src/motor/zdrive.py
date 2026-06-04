@@ -89,8 +89,9 @@ publ = z.declare_publisher("{}/heartbeat".format(args.prefix))
 def listener(sample):
     global cmd
     cmd = Twist.deserialize(bytes(sample.payload))
+
 def klaxon_listener(sample):
-    sound_id = 3
+    sound_id = 3 # Apparently doesn't work with other sound ids yet
     print(f"[INFO] Zenoh command received: Play sound {sound_id}")
     servo.write1ByteTxRx(HEARTBEAT, 0)
     servo.write4ByteTxRx(SOUND, sound_id)
