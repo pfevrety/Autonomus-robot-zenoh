@@ -27,6 +27,7 @@ class Aim:
             angular=Vector3(x=0.0, y=0.0, z=0.0)
         )
         self.execute_time = 0.0
+        self.intensity = 0.0
 
         self.searched_object = ""
 
@@ -67,7 +68,7 @@ class Aim:
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
 
-            # print(f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}")
+            print(f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}")
 
             if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
                 self.robot_state = AimState.STOPPED
@@ -75,12 +76,14 @@ class Aim:
                 self.session.put("robot/found_object", self.searched_object.encode())
             else:
                 self.robot_state = AimState.ADVANCING
+                self.intensity = 1 - normalized_height
 
             pass #advance or beep
             #check for size -> if big enough -> beep
             #               -> if not big enough -> advance (handle disappearing objects)
         else:
             self.robot_state = AimState.AIMING
+            self.intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
 
     def choose_move_order(self):
         if self.robot_state == AimState.STOPPED:
@@ -93,13 +96,12 @@ class Aim:
             self.aimed = 0.9
 
         if self.robot_state == AimState.AIMING or self.robot_state == AimState.SEARCHING:
-            intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
             sign = 1 if self.aimed > 0.5 else -1
+            self.do_twist(0.0, sign * self.intensity * self.angular_scale, DEFAULT_TURNING_TIME)
 
-            self.do_twist(0.0, sign * intensity * self.angular_scale, DEFAULT_TURNING_TIME)
 
         if self.robot_state == AimState.ADVANCING:
-            self.do_twist(-self.linear_scale, 0.0, DEFAULT_ADVANCE_TIME)
+            self.do_twist(-self.linear_scale, 0.0, DEFAULT_ADVANCE_TIME * self.intensity)
 
         self.last_moved_time = time.time()
 
