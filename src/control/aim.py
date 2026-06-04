@@ -9,7 +9,7 @@ DEFAULT_LINEAR_SCALE = 20.0
 DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.5
 DEFAULT_TURNING_TIME = 0.1
-SEARCH_AGAIN_TIME = 1
+SEARCH_AGAIN_TIME = 3.5
 
 class Aim:
     def __init__(
@@ -106,7 +106,7 @@ class Aim:
 
         if self.robot_state == AimState.SEARCHING:
             self.aimed = 1.0
-            self.intensity = 3.0
+            self.intensity = 1.0
 
         if self.robot_state == AimState.AIMING or self.robot_state == AimState.SEARCHING:
             sign = 1 if self.aimed > 0.5 else -1
