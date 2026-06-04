@@ -55,6 +55,8 @@ class Aim:
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
 
+            print(f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}")
+
             if normalized_width > 0.7 or normalized_height > 0.7:
                 self.robot_state = AimState.STOPPED
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))

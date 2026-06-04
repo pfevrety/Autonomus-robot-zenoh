@@ -126,74 +126,77 @@ z = zenoh.open(conf)
 print("[INFO] Start detection")
 sub = z.declare_subscriber(args.prefix + "/cams/*", frames_listener)
 
-while True:
-    now = time.time()
-    for cam in list(cams):
-        if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
-            del cams[cam]
-    for cam in list(cams):
-        npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
-        matImage = cv2.imdecode(npImage, 1)
+try:
+    while True:
+        now = time.time()
+        for cam in list(cams):
+            if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
+                del cams[cam]
+        for cam in list(cams):
+            npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
+            matImage = cv2.imdecode(npImage, 1)
 
-        if matImage is None:
-            continue
-
-        hauteur, largeur = matImage.shape[:2]
-
-        results = model.predict(source=matImage, show_boxes=True, verbose=False)
-        i = 0
-        for result in results:
-
-            if result.boxes is None:
+            if matImage is None:
                 continue
 
-            for box in result.boxes:
-                for data in box.data:
-                    box = [
-                        [int(data[0]), int(data[1])],
-                        [int(data[2]), int(data[1])],
-                        [int(data[2]), int(data[3])],
-                        [int(data[0]), int(data[3])],
-                    ]
-                    normalized_box = [
-                        [int(data[0] / largeur), int(data[1]) / hauteur],
-                        [int(data[2] / largeur), int(data[1]) / hauteur],
-                        [int(data[2] / largeur), int(data[3]) / hauteur],
-                        [int(data[0] / largeur), int(data[3]) / hauteur],
-                    ]
+            hauteur, largeur = matImage.shape[:2]
 
-                    confidence = float(data[4])
-                    object_name = result.names[int(data[5])]
+            results = model.predict(source=matImage, show_boxes=True, verbose=False)
+            i = 0
+            for result in results:
 
-                    smoothed_confidence = smooth_detection(object_name, confidence)
+                if result.boxes is None:
+                    continue
 
-                    center = [
-                        int((data[0] + data[2]) / 2),
-                        int((data[1] + data[3]) / 2),
-                    ]
+                for box in result.boxes:
+                    for data in box.data:
+                        box = [
+                            [int(data[0]), int(data[1])],
+                            [int(data[2]), int(data[1])],
+                            [int(data[2]), int(data[3])],
+                            [int(data[0]), int(data[3])],
+                        ]
+                        normalized_box = [
+                            [int(data[0] / largeur), int(data[1]) / hauteur],
+                            [int(data[2] / largeur), int(data[1]) / hauteur],
+                            [int(data[2] / largeur), int(data[3]) / hauteur],
+                            [int(data[0] / largeur), int(data[3]) / hauteur],
+                        ]
 
-                    smoothed_center = smooth_center_quadratic(
-                        object_name, center, smoothed_confidence
-                    )
-                    z.put(
-                        "{}/objects/{}/{}".format(args.prefix, cam, i),
-                        json.dumps(
-                            {
-                                "name": object_name,
-                                "confiance": int(smoothed_confidence * 100),
-                                "box": box,
-                                "normalized_box": normalized_box,
-                                "raw_center": center,
-                                "center": smoothed_center,
-                                "normalized_center": [
-                                    smoothed_center[0] / largeur,
-                                    smoothed_center[1] / hauteur,
-                                ],
-                            }
-                        ),
-                    )
-                    i += 1
+                        confidence = float(data[4])
+                        object_name = result.names[int(data[5])]
 
-    # time.sleep(args.delay)
+                        smoothed_confidence = smooth_detection(object_name, confidence)
 
-z.close()
+                        center = [
+                            int((data[0] + data[2]) / 2),
+                            int((data[1] + data[3]) / 2),
+                        ]
+
+                        smoothed_center = smooth_center_quadratic(
+                            object_name, center, smoothed_confidence
+                        )
+                        z.put(
+                            "{}/objects/{}/{}".format(args.prefix, cam, i),
+                            json.dumps(
+                                {
+                                    "name": object_name,
+                                    "confiance": int(smoothed_confidence * 100),
+                                    "box": box,
+                                    "normalized_box": normalized_box,
+                                    "raw_center": center,
+                                    "center": smoothed_center,
+                                    "normalized_center": [
+                                        smoothed_center[0] / largeur,
+                                        smoothed_center[1] / hauteur,
+                                    ],
+                                }
+                            ),
+                        )
+                        i += 1
+
+        # time.sleep(args.delay)
+except KeyboardInterrupt:
+    pass
+finally:
+    z.close()
