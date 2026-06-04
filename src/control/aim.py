@@ -10,7 +10,7 @@ DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.5
 DEFAULT_TURNING_TIME = 0.1
 SEARCH_AGAIN_TIME = 1.5
-BEEP_WAIT = 2.0
+BEEP_WAIT = 4.0
 DEADZONE = 0.2
 DEFAULT_LATENCY = 2.0
 
@@ -79,9 +79,10 @@ class Aim:
             if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
                 self.robot_state = AimState.STOPPED
                 self.do_twist(0.0, 0.0, 1.0) # pause immediately even though there's a time.sleep
-                self.send_twist()
-                time.sleep(BEEP_WAIT) # Wait for Beep Port to be available
+                # self.send_twist()
+                time.sleep(BEEP_WAIT / 2) # Wait for Beep Port to be available
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+                time.sleep(BEEP_WAIT / 2)
                 self.session.put("robot/found_object", self.searched_object.encode())
             else:
                 self.robot_state = AimState.ADVANCING
