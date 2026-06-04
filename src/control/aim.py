@@ -65,7 +65,7 @@ class Aim:
             self.aimed = 0.9
         
         intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
-        sign = 1 if self.aimed > 0.5 else -1
+        sign = -1 if self.aimed > 0.5 else 1
 
         self.pub_twist(0.0, sign * intensity * self.angular_scale)
         self.last_moved_time = time.time()
