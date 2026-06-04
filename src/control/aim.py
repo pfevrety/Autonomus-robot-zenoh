@@ -105,11 +105,8 @@ class Aim:
 
     def do_twist(self, linear, angular, execute_time):
         self.execute_time = execute_time
-        if angular == 0 and linear == 0:
-            execute_time = 0.0
-            return
-        
-        print("\nmove order", linear, angular)
+        if not(angular == 0 and linear == 0):
+            print("\nmove order", linear, angular)
 
         self.last_twist = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
