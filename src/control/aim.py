@@ -93,7 +93,9 @@ class Aim:
 
         if self.robot_state == AimState.ADVANCING:
             self.pub_twist(-self.linear_scale, 0.0)
+            time.sleep(0.1)
             self.pub_twist(-self.linear_scale, 0.0)
+            time.sleep(0.1)
             self.pub_twist(-self.linear_scale, 0.0)
 
 
