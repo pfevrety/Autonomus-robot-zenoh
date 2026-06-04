@@ -88,7 +88,7 @@ class Aim:
             self.found_object()
 
         elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
-            self.pub_twist(self.forward_speed, 0.0)
+            self.pub_twist(-self.forward_speed, 0.0)
             return
         else:
             intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
