@@ -135,9 +135,16 @@ while True:
         npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
         matImage = cv2.imdecode(npImage, 1)
 
+        if matImage is None:
+            continue
+
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
         for result in results:
+
+            if result.boxes is None:
+                continue
+
             for box in result.boxes:
                 for data in box.data:
                     box = [
