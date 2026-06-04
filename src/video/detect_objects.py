@@ -157,10 +157,10 @@ try:
                             [int(data[0]), int(data[3])],
                         ]
                         normalized_box = [
-                            [int(data[0] / largeur), int(data[1]) / hauteur],
-                            [int(data[2] / largeur), int(data[1]) / hauteur],
-                            [int(data[2] / largeur), int(data[3]) / hauteur],
-                            [int(data[0] / largeur), int(data[3]) / hauteur],
+                            [int(data[0]) / largeur, int(data[1]) / hauteur],
+                            [int(data[2]) / largeur, int(data[1]) / hauteur],
+                            [int(data[2]) / largeur, int(data[3]) / hauteur],
+                            [int(data[0]) / largeur, int(data[3]) / hauteur],
                         ]
 
                         confidence = float(data[4])

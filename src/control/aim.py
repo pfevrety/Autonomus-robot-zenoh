@@ -79,7 +79,7 @@ class Aim:
                 self.session.put("robot/found_object", self.searched_object.encode())
             else:
                 self.robot_state = AimState.ADVANCING
-                self.intensity = 1 - normalized_height
+                self.intensity = 1 - max(normalized_width, normalized_height)
 
             pass #advance or beep
             #check for size -> if big enough -> beep
