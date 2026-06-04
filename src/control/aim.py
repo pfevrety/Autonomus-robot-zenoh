@@ -32,6 +32,7 @@ class Aim:
     def state_callback(self, sample: zenoh.Sample):
         if sample.payload.to_bytes(): #check for true or false (technically checking if null or not, but it's the same)
             self.robot_state = AimState.SEARCHING
+            self.last_moved_time = time.time()
         else:
             self.robot_state = AimState.STOPPED
         print(f"État du robot mis à jour à distance: {self.robot_state}")
@@ -55,7 +56,7 @@ class Aim:
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
 
-            print(f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}")
+            # print(f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}")
 
             if normalized_width > 0.7 or normalized_height > 0.7:
                 self.robot_state = AimState.STOPPED
@@ -87,7 +88,7 @@ class Aim:
             self.pub_twist(0.0, sign * intensity * self.angular_scale)
 
         if self.robot_state == AimState.ADVANCING:
-            self.pub_twist(self.linear_scale, 0.0)
+            self.pub_twist(-self.linear_scale, 0.0)
 
 
         self.last_moved_time = time.time()
