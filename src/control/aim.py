@@ -32,6 +32,8 @@ class Aim:
         self.aimed = 2.0
         self.robot_state = "WAIT"
 
+        self.object_width = 0.0
+        self.forward_speed = 20.0
         self.last_action_time = time.time()
 
     def state_callback(self, sample: zenoh.Sample):
@@ -42,17 +44,7 @@ class Aim:
 
         self.object_width = 0.0
 
-        self.forward_speed = 0.5
-        self.forward_duration = 0.3
-        self.forward_start_time = 0.0
-
         self.last_action_time = time.time()
-
-    def state_callback(self, sample: zenoh.Sample):
-        self.robot_state = sample.payload.to_bytes().decode("utf-8")
-        self.aimed = 2.0
-        self.last_action_time = time.time()
-        print(f"État du robot mis à jour: {self.robot_state}")
 
     def latency_callback(self, sample: zenoh.Sample):
         self.latency = float(sample.payload.to_bytes().decode("utf-8")) / 1000
@@ -92,34 +84,21 @@ class Aim:
             return
         if self.aimed == 2.0:
             return
-        elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
+        elif self.object_width > 0.7:
             self.found_object()
-        else:
-            intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
 
-        if self.is_moving_forward:
-            if current_time - self.forward_start_time < self.forward_duration:
-                self.pub_twist(self.forward_speed, 0.0)
-                return
-            else:
-                self.pub_twist(0.0, 0.0)
-                self.is_moving_forward = False
-                return
-
-        if abs(self.aimed - 0.5) <= self.deadzone / 2.0:
-            self.is_moving_forward = True
-            self.forward_start_time = current_time
+        elif abs(self.aimed - 0.5) <= self.deadzone / 2.0:
             self.pub_twist(self.forward_speed, 0.0)
             return
-
-        intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
-            0.5 - self.deadzone / 2.0
-        )
-
-        if self.aimed > 0.5:
-            self.pub_twist(0.0, intensity * self.angular_scale)
         else:
-            self.pub_twist(0.0, -intensity * self.angular_scale)
+            intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
+                0.5 - self.deadzone / 2.0
+            )
+
+            if self.aimed > 0.5:
+                self.pub_twist(0.0, intensity * self.angular_scale)
+            else:
+                self.pub_twist(0.0, -intensity * self.angular_scale)
 
     def pub_twist(self, linear, angular):
         if angular == 0 and linear == 0:
