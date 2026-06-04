@@ -91,9 +91,7 @@ class Aim:
             self.pub_twist(-self.forward_speed, 0.0)
             return
         else:
-            intensity = (abs(self.aimed - 0.5) - self.deadzone / 2.0) / (
-                0.5 - self.deadzone / 2.0
-            )
+            intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
 
             if self.aimed > 0.5:
                 self.pub_twist(0.0, intensity * self.angular_scale)
