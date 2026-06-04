@@ -49,15 +49,24 @@ class Aim:
         self.searched_object = data.get("name")
         self.aimed = data.get("normalized_center")[0]
 
+        
+        if abs(self.aimed - 0.5) < self.deadzone / 2:
+            box = data.get("box")
+            normalized_width = abs(box[1][0] - box[0][0])
+            normalized_height = abs(box[0][1] - box[3][1])
 
-        self.robot_state = AimState.AIMING
-        if self.robot_state == AimState.SEARCHING:
-            if abs(self.aimed - 0.5) < self.deadzone / 2:
-                pass #advance or beep
-                #check for size -> if big enough -> beep
-                #               -> if not big enough -> advance (handle disappearing objects)
+            if normalized_width > 0.7 or normalized_height > 0.7:
+                self.robot_state = AimState.STOPPED
+                self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+                self.session.put("robot/found_object", self.searched_object.encode())
             else:
-                self.robot_state = AimState.AIMING
+                self.robot_state = AimState.ADVANCING
+
+            pass #advance or beep
+            #check for size -> if big enough -> beep
+            #               -> if not big enough -> advance (handle disappearing objects)
+        else:
+            self.robot_state = AimState.AIMING
 
     def move(self):
         if self.robot_state == AimState.STOPPED:
@@ -71,9 +80,13 @@ class Aim:
 
         if self.robot_state == AimState.AIMING or self.robot_state == AimState.SEARCHING:
             intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
-            sign = -1 if self.aimed > 0.5 else 1
+            sign = 1 if self.aimed > 0.5 else -1
 
             self.pub_twist(0.0, sign * intensity * self.angular_scale)
+
+        if self.robot_state == AimState.ADVANCING:
+            self.pub_twist(self.linear_scale, 0.0)
+
 
         self.last_moved_time = time.time()
 
@@ -93,12 +106,6 @@ class Aim:
     def update(self):
         self.move()
         time.sleep(0.01)
-    
-    def found_object(self):
-        self.robot_state = AimState.STOPPED
-
-        self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
-        self.session.put("robot/found_object", self.searched_object.encode())
 
     def destroy(self):
         self.sub.undeclare()

@@ -138,6 +138,8 @@ while True:
         if matImage is None:
             continue
 
+        hauteur, largeur = matImage.shape[:2]
+
         results = model.predict(source=matImage, show_boxes=True, verbose=False)
         i = 0
         for result in results:
@@ -153,6 +155,12 @@ while True:
                         [int(data[2]), int(data[3])],
                         [int(data[0]), int(data[3])],
                     ]
+                    normalized_box = [
+                        [int(data[0] / largeur), int(data[1]) / hauteur],
+                        [int(data[2] / largeur), int(data[1]) / hauteur],
+                        [int(data[2] / largeur), int(data[3]) / hauteur],
+                        [int(data[0] / largeur), int(data[3]) / hauteur],
+                    ]
 
                     confidence = float(data[4])
                     object_name = result.names[int(data[5])]
@@ -167,7 +175,6 @@ while True:
                     smoothed_center = smooth_center_quadratic(
                         object_name, center, smoothed_confidence
                     )
-                    hauteur, largeur = matImage.shape[:2]
                     z.put(
                         "{}/objects/{}/{}".format(args.prefix, cam, i),
                         json.dumps(
@@ -175,6 +182,7 @@ while True:
                                 "name": object_name,
                                 "confiance": int(smoothed_confidence * 100),
                                 "box": box,
+                                "normalized_box": normalized_box,
                                 "raw_center": center,
                                 "center": smoothed_center,
                                 "normalized_center": [
