@@ -79,7 +79,6 @@ class Aim:
         data = json.loads(sample.payload.to_bytes())
         self.searched_object = data.get("name")
         self.aimed = data.get("normalized_center")[0]
-        print("execution de callback")
 
         self.last_received_time = time.time()
 
@@ -87,32 +86,23 @@ class Aim:
             box = data.get("normalized_box")
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
+
             if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
                 self.robot_state = AimState.STOPPED
                 self.do_twist(0.0, 0.0, 1.0)
 
-                # LA CORRECTION EST ICI : on vérifie qu'on n'est pas DEJA en train de klaxonner
                 if not self.beeping:
-                    print("[INFO] Activation du klaxon !")
-
-                    # Sécurité : on force l'envoi de l'arrêt des roues tout de suite
-                    self.send_twist()
-
-                    # On envoie le klaxon VRAIMENT une seule fois
+                    self.beeping = True
+                    self.last_beeping_time = time.time()
                     self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
                     self.session.put(
                         "robot/found_object", self.searched_object.encode()
                     )
-
-                    self.beeping = True
-                    self.last_beeping_time = time.time()
             else:
                 self.robot_state = AimState.ADVANCING
                 self.intensity = 1 - max(normalized_width, normalized_height)
 
-            return  # advance or beep
-            # check for size -> if big enough -> beep
-            #               -> if not big enough -> advance (handle disappearing objects)
+            return
         else:
             self.robot_state = AimState.AIMING
             self.intensity = (abs(self.aimed - 0.5)) / (0.5 + self.deadzone / 2.0)
@@ -168,15 +158,15 @@ class Aim:
             self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
 
     def update(self):
+        # On vérifie si le temps d'attente du bip est écoulé
         if self.beeping and time.time() - self.last_beeping_time > BEEP_WAIT:
             self.beeping = False
 
         self.choose_move_order()
 
-        if not self.beeping:
-            self.send_twist()
+        # On envoie l'ordre de mouvement (qui sera 0,0 si le robot est STOPPED)
+        self.send_twist()
 
-        # On a retiré le "else" qui spammait ou ratait le klaxon
         time.sleep(0.01)
 
     def destroy(self):
