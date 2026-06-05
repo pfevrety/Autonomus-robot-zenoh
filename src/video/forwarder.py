@@ -34,6 +34,8 @@ class Forwarder:
             self.aimed_object_list.remove(object_name)
             print(f"Removed {object_name} from aimed objects list")
             self.update_state()
+        else:
+            print(f"Couldn't find object with name {object_name}")
 
     def remove_all_aimed_objects(self):
         self.aimed_object_list.clear()
@@ -41,6 +43,7 @@ class Forwarder:
         self.update_state()
 
     def found_object_callback(self, sample: zenoh.Sample):
+        print("Removing " + sample.payload.to_string())
         self.remove_aimed_object(sample.payload.to_string())
 
     def destroy(self):
