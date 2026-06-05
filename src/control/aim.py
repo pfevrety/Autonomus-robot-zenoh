@@ -4,7 +4,8 @@ import json
 import time
 from aimstate import AimState
 
-STOP_SIZE = 0.6
+HEIGHT_STOP_SIZE = 0.6
+WIDTH_STOP_SIZE = 0.4
 DEFAULT_LINEAR_SCALE = 20.0
 DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.8
@@ -88,7 +89,10 @@ class Aim:
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
 
-            if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
+            if (
+                normalized_width > WIDTH_STOP_SIZE
+                or normalized_height > HEIGHT_STOP_SIZE
+            ):
                 self.robot_state = AimState.STOPPED
                 self.do_twist(0.0, 0.0, 1.0)
 
