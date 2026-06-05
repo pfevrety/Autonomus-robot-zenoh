@@ -27,6 +27,7 @@ class Aim:
         self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
         self.last_received_time = time.time()
+        self.beeping = False
         self.last_beeping_time = -BEEP_WAIT
         self.last_twist = Twist(
             linear=Vector3(x=0.0, y=0.0, z=0.0),
