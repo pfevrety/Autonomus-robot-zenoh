@@ -102,6 +102,7 @@ async def add_aimed_object(request: Request):
     if object_name:
 
         forwarder.add_aimed_object(object_name)
+
         return {
             "status": "success",
             "message": f"Added {object_name} to aimed objects list",

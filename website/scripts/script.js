@@ -158,23 +158,22 @@ consoleInput.addEventListener('keydown', (event) => {
         
         words.forEach(word => {
             const cleanWord = word.toLowerCase();
-
             addToQueue(cleanWord, word);
             fetch('http://localhost:8000/add_aimed_object', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ object_name: targetObject })
+                body: JSON.stringify({ object_name: cleanWord })
             })
             .then(response => response.json())
             .then(data => {
                 console.log('Succès:', data);
-                addLog(`Backend a ajouté : ${targetName} à la liste des objets visés`, 'success');
+                addLog(`Backend a ajouté : ${cleanWord} à la liste des objets visés`, 'success');
             })
             .catch(error => {
                 console.error('Erreur:', error);
-                addLog(`Échec ajout cible : ${targetName}`, 'error');
+                addLog(`Échec ajout cible : ${cleanWord}`, 'error');
             });
             
         });
