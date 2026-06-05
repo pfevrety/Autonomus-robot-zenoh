@@ -15,10 +15,13 @@ fi
 GIVEN_IP=$1
 
 echo "Starting capture video.py..."
-python3 video/capture_video.py -a picamera -e tcp/$GIVEN_IP:7447 -w 512 -q 70
+python3 video/capture_video.py -a picamera -e tcp/$GIVEN_IP:7447 -w 1200 -q 20 &
 
 echo "Starting zdrive.py"
 python ./motor/zdrive.py &
+
+echo "Starting aim.py"
+python ./control/aim.py &
 
 echo "Everything started succesfully"
 echo "Don't forget to start the zenoh router."

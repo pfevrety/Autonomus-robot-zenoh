@@ -5,7 +5,7 @@ import zenoh
 import numpy as np
 
 conf = zenoh.Config()
-# conf.insert_json5("listen/endpoints", json.dumps(["tcp/0.0.0.0:7447"]))
+conf.insert_json5("listen/endpoints", json.dumps(["tcp/0.0.0.0:7447"]))
 cams = {}
 
 
@@ -57,6 +57,9 @@ def display_video_stream():
             if "img" in cams[cam]:
                 npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
                 matImage = cv2.imdecode(npImage, 1)
+
+                if matImage is None:
+                    continue
                 # matImage = cv2.cvtColor(matImage, cv2.COLOR_RGB2BGR)
                 if "objects" in cams[cam]:
                     for obj in list(cams[cam]["objects"]):

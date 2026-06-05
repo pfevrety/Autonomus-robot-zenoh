@@ -12,20 +12,18 @@ import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
+from video.forwarder import Forwarder
 
 from video.web_display_video import display_video_stream
 from control.web_teleop import TeleopManager
-
-# --- IMPORT AIM HERE ---
-# Adjust the import path depending on where aim.py is located.
-# If it's in the same directory, use: from aim import aim
-import video.forwarder
 
 process_detection = None
 teleop = TeleopManager()
 ANGULAR_SCALE = 200
 LATENCY = 0.5
 
+# THE WEB APP IS THE SAME AS A FORWARDER. DO NOT LAUNCH BOTH FORWARDER AND THE WEB APP
+forwarder = Forwarder()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -84,7 +82,8 @@ async def add_aimed_object(request: Request):
     object_name = data.get("object_name")
 
     if object_name:
-        video.forwarder.aim.add_aimed_object(object_name)
+        
+        forwarder.add_aimed_object(object_name)
         return {
             "status": "success",
             "message": f"Added {object_name} to aimed objects list",
@@ -95,7 +94,7 @@ async def add_aimed_object(request: Request):
 
 @app.post("/clear_aimed_objects")
 async def clear_aimed_objects():
-    video.forwarder.aim.remove_all_aimed_objects()
+    forwarder.remove_all_aimed_objects()
     return {"status": "success", "message": "Cleared all aimed objects from the list"}
 
 
@@ -106,7 +105,7 @@ async def update_latency(request: Request):
     LATENCY = data.get("latency")
 
     if LATENCY is not None:
-        video.forwarder.aim.session.put("robot/config/latency", str(LATENCY))
+        forwarder.session.put("robot/config/latency", str(LATENCY))
         return {"status": "success", "latency": LATENCY}
     return {"status": "error", "message": "Valeur manquante"}
 
@@ -118,7 +117,7 @@ async def update_sensitivity(request: Request):
     ANGULAR_SCALE = data.get("sensitivity")
 
     if ANGULAR_SCALE is not None:
-        video.forwarder.aim.session.put("robot/config/sensitivity", str(ANGULAR_SCALE))
+        forwarder.session.put("robot/config/sensitivity", str(ANGULAR_SCALE))
         return {"status": "success", "sensitivity": ANGULAR_SCALE}
     return {"status": "error", "message": "Valeur manquante"}
 
