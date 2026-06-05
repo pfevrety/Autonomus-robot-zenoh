@@ -27,17 +27,7 @@ directionButtons.forEach(button => {
     });
 });
 
-const targetStyles = {
-    'chair': "bg-amber-900/40 text-amber-300 border border-amber-700/60",
-    'car': "bg-slate-800/80 text-slate-200 border border-slate-600/60",
-    'banana': "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-yellow-500/5",
-    'teddy bear': "bg-orange-950/40 text-orange-400 border border-orange-800/60",
-    'bottle': "bg-cyan-950/60 text-cyan-400 border border-cyan-800/60",
-    'person': "bg-purple-950/50 text-purple-300 border border-purple-800/60",
-
-    'default': "bg-slate-800 text-slate-400 border border-slate-700"
-};
-
+const targetStyles = "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 shadow-yellow-500/5"
 const queueContainer = document.getElementById('target-queue');
 const objectButtons = document.querySelectorAll('.object');
 
@@ -47,7 +37,7 @@ function addToQueue(targetKey, displayName) {
     
     let baseClasses = "queue-item animate-pop-in text-xs font-mono uppercase font-bold tracking-wider py-1.5 px-3 rounded-lg shadow-sm ";
     
-    const specificStyle = targetStyles[targetKey.toLowerCase()] || targetStyles['default'];
+    const specificStyle = targetStyles;
     
     queueItem.className = baseClasses + specificStyle;
     queueItem.textContent = displayName; 
@@ -135,11 +125,24 @@ consoleInput.addEventListener('keydown', (event) => {
         words.forEach(word => {
             const cleanWord = word.toLowerCase();
 
-            if (targetStyles[cleanWord]) {
-                addToQueue(cleanWord, word);
-            } else {
-                addToQueue('default', word);
-            }
+            addToQueue(cleanWord, word);
+            fetch('http://localhost:8000/add_aimed_object', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ object_name: targetObject })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Succès:', data);
+                addLog(`Backend a ajouté : ${targetName} à la liste des objets visés`, 'success');
+            })
+            .catch(error => {
+                console.error('Erreur:', error);
+                addLog(`Échec ajout cible : ${targetName}`, 'error');
+            });
+            
         });
         consoleInput.value = '';
     }
