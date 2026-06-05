@@ -67,7 +67,7 @@ args = parser.parse_args()
 
 count = 0
 cmd = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
-
+play_sound_flag = False  # Nouvelle variable
 conf = (
     zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
 )
@@ -90,11 +90,11 @@ def listener(sample):
     global cmd
     cmd = Twist.deserialize(bytes(sample.payload))
 
+
 def klaxon_listener(sample):
-    sound_id = 3 # Apparently doesn't work with other sound ids yet
-    print(f"[INFO] Zenoh command received: Play sound {sound_id}")
-    servo.write1ByteTxRx(HEARTBEAT, 0)
-    servo.write4ByteTxRx(SOUND, sound_id)
+    global play_sound_flag
+    print("[INFO] Zenoh command received: Play sound 3")
+    play_sound_flag = True
 
 
 print("[INFO] Connect to motor...")
@@ -107,13 +107,17 @@ else:
     sub_klaxon = z.declare_subscriber("{}/klaxon".format(args.prefix), klaxon_listener)
 
 time.sleep(3.0)
-
 print("[INFO] Running!")
 while True:
     if servo is not None:
         servo.write1ByteTxRx(HEARTBEAT, count)
+
+        if play_sound_flag:
+            servo.write1ByteTxRx(HEARTBEAT, 0)
+            servo.write4ByteTxRx(SOUND, 3)
+            play_sound_flag = False
+
         servo.write4ByteTxRx(CMD_VELOCITY_LINEAR_X, int(cmd.linear.x))
-        servo.write4ByteTxRx(CMD_VELOCITY_LINEAR_Y, int(cmd.linear.y))
         servo.write4ByteTxRx(CMD_VELOCITY_LINEAR_Z, int(cmd.linear.z))
         servo.write4ByteTxRx(CMD_VELOCITY_ANGULAR_X, int(cmd.angular.x))
         servo.write4ByteTxRx(CMD_VELOCITY_ANGULAR_Y, int(cmd.angular.y))
