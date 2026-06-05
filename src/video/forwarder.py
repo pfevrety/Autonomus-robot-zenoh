@@ -20,7 +20,7 @@ class Forwarder:
 
     def objects_callback(self, sample: zenoh.Sample):
         data = json.loads(sample.payload.to_bytes())
-        if len(self.aimed_object_list) > 0 and data.get("name") == self.aimed_object_list[0]:
+        if data.get("name") in self.aimed_object_list:
             self.session.put("robot/aimed", sample.payload)
 
     def add_aimed_object(self, object_name):
