@@ -89,12 +89,14 @@ class Aim:
             normalized_height = abs(box[0][1] - box[3][1])
             if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
                 self.robot_state = AimState.STOPPED
-                self.do_twist(
-                    0.0, 0.0, 1.0
-                )  # pause immediately even though there's a time.sleep
-                # self.send_twist()
+                self.do_twist(0.0, 0.0, 1.0)
+
+                # On envoie le klaxon UNE SEULE FOIS, tout de suite
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
                 self.session.put("robot/found_object", self.searched_object.encode())
+
+                self.beeping = True
+                self.last_beeping_time = time.time()
             else:
                 self.robot_state = AimState.ADVANCING
                 self.intensity = 1 - max(normalized_width, normalized_height)
@@ -161,11 +163,11 @@ class Aim:
             self.beeping = False
 
         self.choose_move_order()
+
         if not self.beeping:
             self.send_twist()
-        else:
-            self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
-            time.sleep(0.1)
+
+        # On a retiré le "else" qui spammait ou ratait le klaxon
         time.sleep(0.01)
 
     def destroy(self):
