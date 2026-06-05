@@ -195,7 +195,7 @@ try:
                         )
                         i += 1
 
-        time.sleep(args.delay)
+        # time.sleep(args.delay)
 except KeyboardInterrupt:
     pass
 finally:

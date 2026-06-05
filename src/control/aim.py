@@ -10,7 +10,7 @@ DEFAULT_ANGULAR_SCALE = 200.0
 DEFAULT_ADVANCE_TIME = 0.8
 DEFAULT_TURNING_TIME = 0.1
 SEARCH_AGAIN_TIME = 1.5
-BEEP_WAIT = 3.0
+BEEP_WAIT = 2.0
 DEADZONE = 0.2
 DEFAULT_LATENCY = 2.0
 
@@ -27,6 +27,7 @@ class Aim:
         self.robot_state = AimState.STOPPED
         self.last_moved_time = time.time()
         self.last_received_time = time.time()
+        self.last_beeping_time = -BEEP_WAIT
         self.last_twist = Twist(
             linear=Vector3(x=0.0, y=0.0, z=0.0),
             angular=Vector3(x=0.0, y=0.0, z=0.0)
@@ -80,10 +81,10 @@ class Aim:
                 self.robot_state = AimState.STOPPED
                 self.do_twist(0.0, 0.0, 1.0) # pause immediately even though there's a time.sleep
                 # self.send_twist()
+                self.beeping = True
+                self.last_beeping_time = time.time()
                 self.session.put("robot/found_object", self.searched_object.encode())
-                time.sleep(BEEP_WAIT) # Wait for Beep Port to be available
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
-                time.sleep(self.latency)
             else:
                 self.robot_state = AimState.ADVANCING
                 self.intensity = 1 - max(normalized_width, normalized_height)
@@ -137,8 +138,12 @@ class Aim:
             self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
     
     def update(self):
+        if self.beeping and time.time() - self.last_beeping_time > BEEP_WAIT:
+            self.beeping = False
+
         self.choose_move_order()
-        self.send_twist()
+        if not self.beeping :
+            self.send_twist()
         time.sleep(0.01)
 
     def destroy(self):
