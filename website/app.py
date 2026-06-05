@@ -43,6 +43,19 @@ async def lifespan(app: FastAPI):
             event_queue.put_nowait, {"event": "found", "object_name": object_name}
         )
 
+    def aimed_callback(sample):
+        try:
+            data = json.loads(sample.payload.to_bytes())
+
+            x_position = data.get("normalized_center")[0]
+
+            main_loop.call_soon_threadsafe(
+                event_queue.put_nowait, {"event": "aimed", "position": x_position}
+            )
+        except Exception as e:
+            print(f"[ERROR] Erreur lecture Zenoh aimed: {e}")
+
+    sub_aimed = forwarder.session.declare_subscriber("robot/aimed", aimed_callback)
     sub_found = forwarder.session.declare_subscriber(
         "robot/found_object", found_object_callback
     )

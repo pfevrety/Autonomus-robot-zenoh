@@ -94,7 +94,33 @@ const evtSource = new EventSource("http://localhost:8000/stream");
 
 evtSource.onmessage = function(event) {
     const data = JSON.parse(event.data);
-    
+    if (data.event === "aimed") {
+        const radarContainer = document.getElementById('radar-container');
+        if (!radarContainer) return;
+        
+        const existingDots = radarContainer.querySelectorAll('.aim-dot');
+        existingDots.forEach(dot => dot.remove());
+
+        const dot = document.createElement('div');
+        dot.className = 'aim-dot absolute w-8 h-8 bg-green-500 rounded-full shadow-[0_0_10px_rgba(68,239,68,0.8)] transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-200 z-20';
+        
+        const r = 270; 
+        
+        const angle = Math.PI * (1 - data.position);
+        
+        const x = r + (r * Math.cos(angle));
+        const y = r - (r * Math.sin(angle)); 
+        
+        dot.style.left = `${x}px`;
+        dot.style.top = `${y}px`;
+
+        radarContainer.appendChild(dot);
+
+        setTimeout(() => {
+            dot.style.opacity = '0';
+            setTimeout(() => dot.remove(), 200); 
+        }, 300);
+    }
     if (data.event === "found") {
         const firstPendingItem = queueContainer.querySelector('.text-yellow-400');
         

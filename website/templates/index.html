@@ -39,6 +39,39 @@
             <h1 class="text-sm font-mono tracking-widest text-slate-400 uppercase font-bold">Robot Control Station // <span class="text-yellow-400 font-extrabold">Banane v2.0</span></h1>
         </header>
 
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 md:col-span-1">
+                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Bip Bip</h3>
+                <div class="flex items-center justify-center h-full min-h-[68px]">
+                    <button class="control-btn object py-3 px-4 bg-red-600 hover:bg-red-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-red-900/30 transition-all duration-150 w-full h-full" data-target="klaxon">
+                        Klaxon
+                    </button>
+                </div>
+            </div>              
+
+            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 md:col-span-2">
+                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Réglages</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-center">
+                    
+                    <div class="flex flex-col gap-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
+                        <label for="latency-slider" class="text-xs font-mono text-slate-400 flex justify-between">
+                            Latence <span id="latency-val" class="text-cyan-400 font-bold">2000 ms</span>
+                        </label>
+                        <input type="range" id="latency-slider" min="0" max="5000" value="2000" class="w-full accent-cyan-500">
+                    </div>
+
+                    <div class="flex flex-col gap-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
+                        <label for="sensitivity-slider" class="text-xs font-mono text-slate-400 flex justify-between">
+                            échelle angulaire<span id="sensitivity-val" class="text-cyan-400 font-bold">200</span>
+                        </label>
+                        <input type="range" id="sensitivity-slider" min="2" max="500" step="1" value="200" class="w-full accent-cyan-500">
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
             <div class="lg:col-span-4 flex flex-col gap-6">
@@ -86,60 +119,41 @@
             </div>
 
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 md:col-span-1">
-                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Bip Bip</h3>
-                <div class="flex items-center justify-center h-full min-h-[68px]">
-                    <button class="control-btn object py-3 px-4 bg-red-600 hover:bg-red-500 active:scale-95 text-white text-sm font-semibold rounded-xl shadow-lg shadow-red-900/30 transition-all duration-150 w-full h-full" data-target="klaxon">
-                        Klaxon
-                    </button>
-                </div>
-            </div>              
-
-            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4 md:col-span-2">
-                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Réglages</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-center">
-                    
-                    <div class="flex flex-col gap-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
-                        <label for="latency-slider" class="text-xs font-mono text-slate-400 flex justify-between">
-                            Latence <span id="latency-val" class="text-cyan-400 font-bold">2000 ms</span>
-                        </label>
-                        <input type="range" id="latency-slider" min="0" max="5000" value="2000" class="w-full accent-cyan-500">
-                    </div>
-
-                    <div class="flex flex-col gap-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800/40">
-                        <label for="sensitivity-slider" class="text-xs font-mono text-slate-400 flex justify-between">
-                            échelle angulaire<span id="sensitivity-val" class="text-cyan-400 font-bold">200</span>
-                        </label>
-                        <input type="range" id="sensitivity-slider" min="2" max="500" step="1" value="200" class="w-full accent-cyan-500">
-                    </div>
-
-                </div>
-            </div>
-
-        </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
-                <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
-                    <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase">Objectifs</h3>
-                    <button id="clear-queue" class="py-1 px-3 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 hover:border-transparent text-xs font-mono uppercase font-bold rounded-md transition-all duration-200 active:scale-95">Effacer</button>
-                </div>
-                
-                <div id="target-queue" class="queue-container flex flex-wrap gap-2 min-h-[45px] p-3 bg-slate-950/40 rounded-xl border border-slate-800/40 items-center">
-                                    
-                </div>
+    
+    <div class="md:col-span-1 flex flex-col gap-6">
+        
+        <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b border-slate-800/60 pb-2">
+                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase">Objectifs</h3>
+                <button id="clear-queue" class="py-1 px-3 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 hover:border-transparent text-xs font-mono uppercase font-bold rounded-md transition-all duration-200 active:scale-95">Effacer</button>
             </div>
-            
-            <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
-                <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Logs système</h3>
-                <div id="log-container" class="log-container custom-scrollbar bg-slate-950 border border-slate-950 rounded-xl p-4 h-40 overflow-y-auto font-mono text-xs flex flex-col gap-1.5 shadow-inner">
-                
-                </div>
+            <div id="target-queue" class="queue-container flex flex-wrap gap-2 min-h-[45px] p-3 bg-slate-950/40 rounded-xl border border-slate-800/40 items-center">
             </div>
+        </div>
+        
+        <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+            <h3 class="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase border-b border-slate-800/60 pb-2">Logs système</h3>
+            <div id="log-container" class="log-container custom-scrollbar bg-slate-950 border border-slate-950 rounded-xl p-4 h-40 overflow-y-auto font-mono text-xs flex flex-col gap-1.5 shadow-inner">
+            </div>
+        </div>
+
+    </div>
+
+    <div id="vision-container" class="md:col-span-1 bg-white rounded-2xl min-h-[400px] shadow-xl relative overflow-hidden">    
+        <div id="radar-container" class="absolute bottom-3 left-1/2 transform -translate-x-1/2 w-[540px] h-[270px] pointer-events-none">
+    
+            <div class="absolute inset-0 border-t-[3px] border-l-[3px] border-r-[3px] border-slate-200 rounded-t-full"></div>
+            
+            <svg class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-24 text-slate-300 drop-shadow-md z-10" fill="gray" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
+            </svg>
 
         </div>
+
+    </div>
+
+</div>
     </div>
 
     <script src="../scripts/script.js"></script>
