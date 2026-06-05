@@ -38,6 +38,7 @@ class Aim:
         )
         self.execute_time = 0.0
         self.intensity = 0.0
+        self.last_sent_twist_time = 0.0
 
         self.searched_object = ""
 
@@ -98,6 +99,8 @@ class Aim:
                     self.session.put(
                         "robot/found_object", self.searched_object.encode()
                     )
+
+                    self.last_sent_twist_time = time.time()
             else:
                 self.robot_state = AimState.ADVANCING
                 self.intensity = 1 - max(normalized_width, normalized_height)
@@ -152,10 +155,12 @@ class Aim:
         )
 
     def send_twist(self):
-        if (
-            time.time() - self.last_moved_time < self.execute_time
-        ):  # waiting for latency before moving again
-            self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
+        now = time.time()
+        if now - self.last_moved_time < self.execute_time:
+
+            if now - self.last_sent_twist_time > 0.05:
+                self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
+                self.last_sent_twist_time = now
 
     def update(self):
         # On vérifie si le temps d'attente du bip est écoulé
