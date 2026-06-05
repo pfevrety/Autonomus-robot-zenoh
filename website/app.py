@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
+import asyncio
 import sys
 import subprocess
 from contextlib import asynccontextmanager
@@ -25,11 +26,28 @@ LATENCY = 0.5
 # THE WEB APP IS THE SAME AS A FORWARDER. DO NOT LAUNCH BOTH FORWARDER AND THE WEB APP
 forwarder = Forwarder()
 
+event_queue = asyncio.Queue()
+main_loop = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global process_detection
+    global main_loop
+    main_loop = asyncio.get_running_loop()
 
-    print("[INFO] subprocess detect_objects.py started...")
+    def found_object_callback(sample):
+        object_name = sample.payload.to_bytes().decode("utf-8", errors="ignore")
+        print(f"[INFO] Zenoh object found: {object_name}")
+        main_loop.call_soon_threadsafe(
+            event_queue.put_nowait, {"event": "found", "object_name": object_name}
+        )
+
+    sub_found = forwarder.session.declare_subscriber(
+        "robot/found_object", found_object_callback
+    )
+
+    # print("[INFO] subprocess detect_objects.py started...")
     # process_detection = subprocess.Popen(
     #     ["python", "./src/video/detect_objects.py", "-e", "tcp/127.0.0.1:7447"],
     #     shell=False,
@@ -82,7 +100,7 @@ async def add_aimed_object(request: Request):
     object_name = data.get("object_name")
 
     if object_name:
-        
+
         forwarder.add_aimed_object(object_name)
         return {
             "status": "success",
@@ -127,6 +145,17 @@ async def activate_klaxon():
     print("[INFO] Klaxon command via Zenoh requested")
     teleop.pub_bip(1)
     return {"status": "success", "action": "klaxon"}
+
+
+@app.get("/stream")
+async def stream_events():
+
+    async def event_generator():
+        while True:
+            data = await event_queue.get()
+            yield f"data: {json.dumps(data)}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get("/")

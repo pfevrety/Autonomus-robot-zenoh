@@ -90,6 +90,40 @@ objectButtons.forEach(button => {
     });
 });
 
+const evtSource = new EventSource("http://localhost:8000/stream");
+
+evtSource.onmessage = function(event) {
+    const data = JSON.parse(event.data);
+    
+    if (data.event === "found") {
+        const firstPendingItem = queueContainer.querySelector('.text-yellow-400');
+        
+        if (firstPendingItem) {
+            firstPendingItem.classList.remove(
+                'bg-yellow-500/20', 
+                'text-yellow-400', 
+                'border-yellow-500/40', 
+                'shadow-yellow-500/5'
+            );
+            
+            firstPendingItem.classList.add(
+                'bg-emerald-500/20', 
+                'text-emerald-400', 
+                'border-emerald-500/40', 
+                'shadow-emerald-500/5'
+            );
+            
+            addLog(`Cible trouvée par le robot : ${data.object_name}`, 'success');
+        } else {
+            console.log("Objet trouvé, mais la liste des attentes est déjà vide.");
+        }
+    }
+};
+
+evtSource.onerror = function() {
+    console.error("Erreur de connexion SSE avec le serveur.");
+};
+
 const clearBtn = document.getElementById('clear-queue');
 clearBtn.addEventListener('click', () => {
     queueContainer.innerHTML = ''; 
