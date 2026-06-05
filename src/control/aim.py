@@ -91,12 +91,21 @@ class Aim:
                 self.robot_state = AimState.STOPPED
                 self.do_twist(0.0, 0.0, 1.0)
 
-                # On envoie le klaxon UNE SEULE FOIS, tout de suite
-                self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
-                self.session.put("robot/found_object", self.searched_object.encode())
+                # LA CORRECTION EST ICI : on vérifie qu'on n'est pas DEJA en train de klaxonner
+                if not self.beeping:
+                    print("[INFO] Activation du klaxon !")
 
-                self.beeping = True
-                self.last_beeping_time = time.time()
+                    # Sécurité : on force l'envoi de l'arrêt des roues tout de suite
+                    self.send_twist()
+
+                    # On envoie le klaxon VRAIMENT une seule fois
+                    self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+                    self.session.put(
+                        "robot/found_object", self.searched_object.encode()
+                    )
+
+                    self.beeping = True
+                    self.last_beeping_time = time.time()
             else:
                 self.robot_state = AimState.ADVANCING
                 self.intensity = 1 - max(normalized_width, normalized_height)
