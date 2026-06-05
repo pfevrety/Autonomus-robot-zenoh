@@ -44,6 +44,7 @@ async def lifespan(app: FastAPI):
         )
 
     def aimed_callback(sample):
+        print(f"[INFO] Zenoh aimed received: {sample.payload.to_string()}")
         try:
             data = json.loads(sample.payload.to_bytes())
 

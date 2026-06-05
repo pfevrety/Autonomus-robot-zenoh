@@ -5,7 +5,7 @@ import zenoh
 import numpy as np
 
 conf = zenoh.Config()
-conf.insert_json5("listen/endpoints", json.dumps(["tcp/0.0.0.0:7447"]))
+# conf.insert_json5("listen/endpoints", json.dumps(["tcp/0.0.0.0:7447"]))
 cams = {}
 
 

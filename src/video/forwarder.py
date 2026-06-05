@@ -2,15 +2,20 @@ import zenoh
 import json
 import time
 
+
 class Forwarder:
     def __init__(self):
         conf = zenoh.Config()
         zenoh.init_log_from_env_or("error")
         self.session = zenoh.open(conf)
 
-        self.sub = self.session.declare_subscriber("**/objects/**", self.objects_callback)
-        self.sub_found_object = self.session.declare_subscriber("robot/found_object", self.found_object_callback)
-        
+        self.sub = self.session.declare_subscriber(
+            "**/objects/**", self.objects_callback
+        )
+        self.sub_found_object = self.session.declare_subscriber(
+            "robot/found_object", self.found_object_callback
+        )
+
         self.aimed_object_list = []
         self.update_state()
 
@@ -20,7 +25,11 @@ class Forwarder:
 
     def objects_callback(self, sample: zenoh.Sample):
         data = json.loads(sample.payload.to_bytes())
-        if data.get("name") in self.aimed_object_list:
+
+        if (
+            len(self.aimed_object_list) > 0
+            and data.get("name") == self.aimed_object_list[0]
+        ):
             self.session.put("robot/aimed", sample.payload)
 
     def add_aimed_object(self, object_name):
@@ -30,6 +39,7 @@ class Forwarder:
             self.update_state()
 
     def remove_aimed_object(self, object_name):
+        print(object_name, self.aimed_object_list)
         if object_name in self.aimed_object_list:
             self.aimed_object_list.remove(object_name)
             print(f"Removed {object_name} from aimed objects list")
@@ -49,6 +59,7 @@ class Forwarder:
     def destroy(self):
         self.sub.undeclare()
         self.session.close()
+
 
 if __name__ == "__main__":
     forwarder = Forwarder()

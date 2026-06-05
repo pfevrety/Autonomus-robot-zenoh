@@ -79,6 +79,7 @@ class Aim:
         data = json.loads(sample.payload.to_bytes())
         self.searched_object = data.get("name")
         self.aimed = data.get("normalized_center")[0]
+        print("execution de callback")
 
         self.last_received_time = time.time()
 
@@ -86,27 +87,19 @@ class Aim:
             box = data.get("normalized_box")
             normalized_width = abs(box[1][0] - box[0][0])
             normalized_height = abs(box[0][1] - box[3][1])
-
-            print(
-                f"normalized width {normalized_width}, normalized height {normalized_height},\n box {box}"
-            )
-
             if normalized_width > STOP_SIZE or normalized_height > STOP_SIZE:
                 self.robot_state = AimState.STOPPED
                 self.do_twist(
                     0.0, 0.0, 1.0
                 )  # pause immediately even though there's a time.sleep
                 # self.send_twist()
-                time.sleep(BEEP_WAIT / 2)  # Wait for Beep Port to be available
                 self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
-                time.sleep(BEEP_WAIT / 2)
                 self.session.put("robot/found_object", self.searched_object.encode())
-                self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
             else:
                 self.robot_state = AimState.ADVANCING
                 self.intensity = 1 - max(normalized_width, normalized_height)
 
-            pass  # advance or beep
+            return  # advance or beep
             # check for size -> if big enough -> beep
             #               -> if not big enough -> advance (handle disappearing objects)
         else:
