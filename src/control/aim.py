@@ -165,6 +165,7 @@ class Aim:
             self.send_twist()
         else:
             self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+            time.sleep(0.1)
         time.sleep(0.01)
 
     def destroy(self):
