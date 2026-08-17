@@ -1,7 +1,7 @@
-# 🍌 Banane v2.0
+# 🤖 Autonomous Robot
 
-> Robot autonome piloté par Zenoh : la Raspberry Pi capture les images, le
-> laptop détecte les objets avec YOLO, et le robot va les chercher tout seul.
+> An autonomous robot powered by Zenoh: the Raspberry Pi captures images, the
+> laptop detects objects with YOLO, and the robot goes after them on its own.
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Zenoh](https://img.shields.io/badge/Zenoh-1.x-FF6F00?logo=eclipse&logoColor=white)](https://zenoh.io/)
@@ -10,36 +10,34 @@
 
 ---
 
-## À propos
+## About
 
-**Banane v2.0** est un projet de **semaine d'intégration à CentraleSupélec**.
-En quelques jours, des étudiants ont conçu un robot capable de repérer un
-objet cible dans une pièce à l'aide d'une caméra et d'un modèle de
-détection d'objets, puis de s'en approcher en autonomie. La liaison entre
-le robot (Raspberry Pi + caméra + servomoteur Dynamixel) et le poste de
-contrôle (laptop + interface web) repose intégralement sur **[Zenoh](https://zenoh.io/)**,
-un middleware pub/sub pensé pour les systèmes distribués et les flots de
-données à haut débit.
+**Autonomous Robot** is a project developed during the **CentraleSupélec integration week**.
+In just a few days, students designed a robot capable of spotting a target
+object in a room using a camera and an object-detection model, then getting
+closer to it autonomously. The link between the robot (Raspberry Pi + camera +
+Dynamixel servo) and the control station (laptop + web interface) is based
+entirely on **[Zenoh](https://zenoh.io/)**, a pub/sub middleware designed for
+distributed systems and high-throughput data streams.
 
-Le projet a été conçu pour illustrer deux enjeux pédagogiques :
+The project was designed to illustrate two educational challenges:
 
-1. **Construire un pipeline temps réel** qui traverse des processus Python
-   distincts, des équipements hétérogènes (CPU embarqué + GPU laptop), et un
-   médium peu fiable (Wi-Fi).
-2. **Découpler les responsabilités** entre capture, détection, navigation et
-   interface homme-machine grâce à un bus de messages partagé, plutôt qu'à
-   des appels de fonctions enchaînés.
+1. **Build a real-time pipeline** that spans multiple Python processes,
+   heterogeneous equipment (embedded CPU + laptop GPU), and an unreliable
+   medium (Wi-Fi).
+2. **Decouple responsibilities** between capture, detection, navigation, and
+   the human-machine interface through a shared message bus rather than a chain
+   of coupled function calls.
 
-![Dashboard web](docs/screenshots/dashboard.png)
+![Web dashboard](docs/screenshots/dashboard.png)
 
-L'interface web ci-dessus est la station de contrôle : elle affiche le
-flux caméra annoté, permet de pousser un nouvel objectif dans la file
-d'attente, et expose les deux paramètres de la boucle d'aim (latence et
-sensibilité angulaire).
+The web interface above is the control station: it displays the annotated camera
+feed, lets you push a new target into the queue, and exposes the two parameters
+of the aim loop (latency and angular sensitivity).
 
 ## Architecture
 
-Le système est réparti entre deux machines qui communiquent par Zenoh :
+The system is split across two machines that communicate over Zenoh:
 
 ```mermaid
 flowchart LR
@@ -69,175 +67,173 @@ flowchart LR
     zdrive -- "Dynamixel /dev/ttyACM0" --> capture
 ```
 
-### Topics Zenoh
+### Zenoh topics
 
-| Sens | Topic | Payload | Producteur(s) | Consommateur(s) |
+| Direction | Topic | Payload | Producer(s) | Consumer(s) |
 |---|---|---|---|---|
-| Frames caméra | `demo/obj-detect/cams/<cam_id>` | JPEG bytes | `capture_video.py` | `detect_objects.py`, `web_display_video.py`, `display_video.py` |
-| Détections YOLO | `demo/obj-detect/objects/<cam>/<i>` | JSON `{name, confiance, box, …}` | `detect_objects.py` | `forwarder.py`, `web_display_video.py`, `display_video.py` |
-| Détection ciblée | `robot/aimed` | JSON (mêmes clés) | `forwarder.py` | `control/aim.py`, `website/app.py` |
-| État robot | `robot/state` | 1 byte (`bool`) | `forwarder.py` | `control/aim.py` |
-| Cible atteinte | `robot/found_object` | UTF-8 (nom) | `control/aim.py` | `forwarder.py`, `website/app.py` |
-| Latence aim | `robot/config/latency` | UTF-8 (ms) | `website/app.py` | `control/aim.py` |
-| Sensibilité aim | `robot/config/sensitivity` | UTF-8 (deg/step) | `website/app.py` | `control/aim.py` |
-| Commande vitesse | `rt/turtle1/cmd_vel` | CDR `Twist` | `control/aim.py`, `control/web_teleop.py` | `motor/zdrive.py` |
+| Camera frames | `demo/obj-detect/cams/<cam_id>` | JPEG bytes | `capture_video.py` | `detect_objects.py`, `web_display_video.py`, `display_video.py` |
+| YOLO detections | `demo/obj-detect/objects/<cam>/<i>` | JSON `{name, confidence, box, …}` | `detect_objects.py` | `forwarder.py`, `web_display_video.py`, `display_video.py` |
+| Targeted detection | `robot/aimed` | JSON (same keys) | `forwarder.py` | `control/aim.py`, `website/app.py` |
+| Robot state | `robot/state` | 1 byte (`bool`) | `forwarder.py` | `control/aim.py` |
+| Target reached | `robot/found_object` | UTF-8 (name) | `control/aim.py` | `forwarder.py`, `website/app.py` |
+| Aim latency | `robot/config/latency` | UTF-8 (ms) | `website/app.py` | `control/aim.py` |
+| Aim sensitivity | `robot/config/sensitivity` | UTF-8 (deg/step) | `website/app.py` | `control/aim.py` |
+| Velocity command | `rt/turtle1/cmd_vel` | CDR `Twist` | `control/aim.py`, `control/web_teleop.py` | `motor/zdrive.py` |
 | Klaxon | `rt/turtle1/klaxon` | UTF-8 (sound ID) | `control/aim.py`, `control/web_teleop.py` | `motor/zdrive.py` |
-| Heartbeat | `rt/turtle1/heartbeat` | UTF-8 (counter) | `motor/zdrive.py` | outils de diagnostic |
+| Heartbeat | `rt/turtle1/heartbeat` | UTF-8 (counter) | `motor/zdrive.py` | diagnostic tools |
 
-## Structure du dépôt
+## Repository structure
 
 ```
-Autonomus-robot-zenoh/
+autonomous-robot/
 ├── README.md
 ├── LICENSE                            ← MIT
 ├── requirements.txt
 ├── docs/
 │   └── screenshots/
 │       └── dashboard.png
-├── models/                            ← modèles YOLO (non versionnés)
+├── models/                            ← YOLO models (not versioned)
 ├── src/
-│   ├── common/                        ← helpers partagés (types CDR, topics, argparse, publishers)
+│   ├── common/                        ← shared helpers (CDR types, topics, argparse, publishers)
 │   │   ├── types.py
 │   │   ├── topics.py
 │   │   ├── zenoh_args.py
 │   │   └── publish.py
 │   ├── video/
-│   │   ├── capture_video.py           ← capture + publication JPEG sur Zenoh (Pi ou USB)
-│   │   ├── detect_objects.py          ← YOLO sur les frames reçues
-│   │   ├── display_video.py           ← viewer OpenCV (debug)
-│   │   ├── web_display_video.py       ← générateur MJPEG pour la webapp
-│   │   └── forwarder.py               ← filtre les détections et publie robot/aimed
+│   │   ├── capture_video.py           ← capture + JPEG publication over Zenoh (Pi or USB)
+│   │   ├── detect_objects.py          ← YOLO on received frames
+│   │   ├── display_video.py           ← OpenCV viewer (debug)
+│   │   ├── web_display_video.py       ← MJPEG generator for the web app
+│   │   └── forwarder.py               ← filters detections and publishes robot/aimed
 │   ├── control/
-│   │   ├── aimstate.py                ← enum STOPPED / SEARCHING / AIMING / ADVANCING
-│   │   ├── aim.py                     ← machine d'état et génération des Twist
-│   │   ├── teleop.py                  ← téléop clavier curses
-│   │   ├── web_teleop.py              ← téléop HTTP appelé par la webapp
-│   │   └── common.py                  ← shim rétro-compatible (ré-exporte common.types)
+│   │   ├── aimstate.py                ← STOPPED / SEARCHING / AIMING / ADVANCING enum
+│   │   ├── aim.py                     ← state machine and Twist generation
+│   │   ├── teleop.py                  ← keyboard teleop (curses)
+│   │   ├── web_teleop.py              ← HTTP teleop invoked by the web app
+│   │   └── common.py                  ← backward-compatible shim (re-exports common.types)
 │   ├── motor/
-│   │   ├── servo.py                   ← constantes + wrapper bas niveau Dynamixel
-│   │   └── zdrive.py                  ← bridge Zenoh → servomoteur
+│   │   ├── servo.py                   ← constants + low-level Dynamixel wrapper
+│   │   └── zdrive.py                  ← Zenoh → motor bridge
 │   └── launch/
-│       └── pi.bash                    ← script de démarrage côté Pi
+│       └── pi.bash                    ← startup script for the Pi side
 ├── website/
 │   ├── app.py                         ← FastAPI (MJPEG, SSE, REST)
 │   ├── templates/
-│   │   └── index.html                 ← UI Tailwind dark mode
+│   │   └── index.html                 ← dark mode Tailwind UI
 │   └── scripts/
 │       └── script.js
-├── detection_banana/                  ← variante mono-classe (détection de bananes uniquement)
+├── detection_banana/                  ← single-class variant (banana detection only)
 │   ├── detector.py
 │   └── publisher.py
-└── test.py                            ← mock publisher pour tester la chaîne sans caméra
+└── test.py                            ← mock publisher for testing the pipeline without a camera
 ```
 
-## Stack technique
+## Tech stack
 
-### Logiciel
+### Software
 
 - **Python 3.10+**
-- **[Zenoh](https://zenoh.io/)** — middleware pub/sub
-- **[Ultralytics YOLO](https://github.com/ultralytics/ultralytics)** — détection d'objets
-- **OpenCV** + **imutils** — capture et annotations vidéo
-- **FastAPI** + **Uvicorn** — tableau de bord web
-- **pycdr2** — sérialisation CDR des messages `Twist`/`Vector3`
-- **dynamixel-sdk** — protocole série du servomoteur
-- **Tailwind CSS** — interface web
+- **[Zenoh](https://zenoh.io/)** — pub/sub middleware
+- **[Ultralytics YOLO](https://github.com/ultralytics/ultralytics)** — object detection
+- **OpenCV** + **imutils** — video capture and annotation
+- **FastAPI** + **Uvicorn** — web dashboard
+- **pycdr2** — CDR serialization for `Twist`/`Vector3` messages
+- **dynamixel-sdk** — serial protocol for the servo motor
+- **Tailwind CSS** — web UI styling
 
-### Matériel
+### Hardware
 
 - Raspberry Pi 4 (Wi-Fi)
-- Module caméra Raspberry Pi (`picamera2`) ou webcam USB
-- Servomoteur Dynamixel (XM430) + carte de contrôle
-- Alimentation + châssis mobile
+- Raspberry Pi camera module (`picamera2`) or USB webcam
+- Dynamixel servo (XM430) + control board
+- Power supply + mobile chassis
 
 ## Installation
 
 ```bash
-git clone https://github.com/<ton-compte>/Autonomus-robot-zenoh.git
-cd Autonomus-robot-zenoh
+git clone https://github.com/<your-account>/autonomous-robot.git
+cd autonomous-robot
 
 python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
-# Sur Raspberry Pi OS uniquement :
+# On Raspberry Pi OS only:
 sudo apt install -y python3-picamera2
 ```
 
-Le modèle YOLO n'est pas versionné dans le dépôt. Téléchargez-le
-explicitement dans `models/` (Ultralytics le fait à la volée au premier
-lancement, mais le pré-télécharger accélère les redémarrages) :
+The YOLO model is not versioned in the repository. Download it explicitly into
+`models/` (Ultralytics does this on first run, but pre-downloading speeds up
+restart times):
 
 ```bash
 mkdir -p models
-# Option 1 : laisser Ultralytics gérer (recommandé)
+# Option 1: let Ultralytics manage it (recommended)
 python -c "from ultralytics import YOLO; YOLO('models/yolo26s.pt')"
 ```
 
-## Lancement
+## Launch
 
-Trois fenêtres / processus distincts, plus un routeur Zenoh optionnel :
+Three separate windows / processes, plus an optional Zenoh router:
 
-### 1. (Optionnel) Routeur Zenoh sur un PC fixe
+### 1. (Optional) Zenoh router on a fixed PC
 
 ```bash
 zenoh-router
 ```
 
-Utile si le Pi et le laptop ne se voient pas directement en multicast, ou
-pour observer le trafic via `zenoh-inspector`.
+Useful if the Pi and laptop are not directly visible via multicast, or to
+observe traffic with `zenoh-inspector`.
 
-### 2. Côté Raspberry Pi
+### 2. On the Raspberry Pi side
 
 ```bash
 cd src/
-bash launch/pi.bash <IP_DU_LAPTOP>
+bash launch/pi.bash <LAPTOP_IP>
 ```
 
-`<IP_DU_LAPTOP>` est l'IP du PC qui fait tourner `detect_objects.py` et la
-webapp — c'est l'endpoint Zenoh auquel le Pi va se connecter (`tcp/<IP>:7447`).
-Le script lance `capture_video.py`, `zdrive.py` et `aim.py` en parallèle.
+`<LAPTOP_IP>` is the IP of the PC running `detect_objects.py` and the web app —
+it is the Zenoh endpoint the Pi connects to (`tcp/<IP>:7447`).
+The script launches `capture_video.py`, `zdrive.py`, and `aim.py` in parallel.
 
-### 3. Côté laptop
+### 3. On the laptop side
 
 ```bash
-# Détection YOLO + forwarder
+# YOLO detection + forwarder
 python src/video/detect_objects.py
-python src/video/forwarder.py &        # ou via website/app.py
+python src/video/forwarder.py &        # or via website/app.py
 
-# Dashboard web
+# Web dashboard
 uvicorn website.app:app --host 0.0.0.0 --port 8000
 ```
 
-Le dashboard est alors accessible sur <http://localhost:8000>.
+The dashboard is then available at <http://localhost:8000>.
 
-## Utilisation
+## Usage
 
-1. **Sélectionner un objectif** via les boutons « Cibles » ou en le
-   tapant dans la console en bas de la page.
-2. Le robot se met en mode `SEARCHING` (rotation lente) tant qu'il ne
-   détecte rien.
-3. Quand l'objet ciblé apparaît dans le champ de la caméra, il passe en
-   `AIMING` puis en `ADVANCING` jusqu'à atteindre la taille d'arrêt
-   (`HEIGHT_STOP_SIZE` / `WIDTH_STOP_SIZE` dans `control/aim.py`).
-4. À l'arrêt, le klaxon retentit et l'objectif passe en vert dans la file
-   d'attente.
-5. Les sliders **Latence** et **Échelle angulaire** ajustent en direct
-   la réactivité de la boucle d'aim.
+1. **Select a target** via the “Targets” buttons or by typing it in the console
+   at the bottom of the page.
+2. The robot enters `SEARCHING` mode (slow rotation) until it detects anything.
+3. When the target object appears in the camera frame, it moves into `AIMING`
+   and then `ADVANCING` until it reaches the stop size
+   (`HEIGHT_STOP_SIZE` / `WIDTH_STOP_SIZE` in `control/aim.py`).
+4. At rest, the klaxon sounds and the target turns green in the queue.
+5. The **Latency** and **Angular scale** sliders adjust the responsiveness of the
+   aim loop in real time.
 
-## Crédits
+## Credits
 
-Projet réalisé par des étudiants de **CentraleSupélec** dans le cadre
-d'une semaine d'intégration.
+Project developed by students at **CentraleSupélec** as part of an
+integration week.
 
-- **[ZettaScale](https://zettascale.tech/)** pour [Zenoh](https://zenoh.io/),
-  middleware utilisé pour tout le bus de messages.
-- **[Ultralytics](https://github.com/ultralytics/ultralytics)** pour
-  YOLO, le modèle de détection d'objets.
-- Le script de téléop clavier (`src/control/teleop.py`) est adapté d'un
-  exemple de la [zenoh-bridge-ros2dds](https://github.com/eclipse-zenoh/zenoh-bridge-ros2dds)
-  (licence Apache-2.0 / EPL-2.0).
+- **[ZettaScale](https://zettascale.tech/)** for [Zenoh](https://zenoh.io/),
+  the middleware used for the message bus.
+- **[Ultralytics](https://github.com/ultralytics/ultralytics)** for YOLO,
+  the object-detection model.
+- The keyboard teleop script (`src/control/teleop.py`) is adapted from an
+  example in [zenoh-bridge-ros2dds](https://github.com/eclipse-zenoh/zenoh-bridge-ros2dds)
+  (Apache-2.0 / EPL-2.0 license).
 
-## Licence
+## License
 
-[MIT](LICENSE) — voir le fichier `LICENSE` à la racine.
+[MIT](LICENSE) — see the `LICENSE` file at the repository root.

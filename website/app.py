@@ -1,4 +1,4 @@
-"""FastAPI web dashboard for the Banane v2.0 robot.
+"""FastAPI web dashboard for the Autonomous Robot.
 
 Exposes:
 

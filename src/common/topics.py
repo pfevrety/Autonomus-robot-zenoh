@@ -1,4 +1,4 @@
-"""Canonical Zenoh key-expressions for the Banane v2.0 pipeline.
+"""Canonical Zenoh key-expressions for the Autonomous Robot pipeline.
 
 Centralising the topics prevents the kind of drift that previously split
 ``robot/aimed`` from ``rt/turtle1/klaxon`` and made the klaxon sound ID a

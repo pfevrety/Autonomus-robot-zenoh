@@ -1,4 +1,4 @@
-"""Shared helpers for the Banane v2.0 Zenoh pipeline.
+"""Shared helpers for the Autonomous Robot Zenoh pipeline.
 
 Centralises:
 - CDR types (``Vector3``, ``Twist``) shared by the control and motor stacks,
