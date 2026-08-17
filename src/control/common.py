@@ -1,32 +1,11 @@
-from dataclasses import dataclass
-from pycdr2 import IdlStruct
-from pycdr2.types import int8, int32, uint32, float64
+"""Backward-compatible re-export of CDR types from the shared package.
 
-@dataclass
-class Vector3(IdlStruct, typename="Vector3"):
-    x: float64
-    y: float64
-    z: float64
+The historical layout had the dataclasses declared here. The canonical
+home is now ``src/common/types.py``; this shim keeps the old import
+paths (``from control.common import Vector3, Twist``) working so external
+entry points that bootstrap ``sys.path`` against ``src/`` keep compiling.
+"""
 
+from common.types import Log, Time, Twist, Vector3
 
-@dataclass
-class Twist(IdlStruct, typename="Twist"):
-    linear: Vector3
-    angular: Vector3
-
-
-@dataclass
-class Time(IdlStruct, typename="Time"):
-    sec: int32
-    nanosec: uint32
-
-
-@dataclass
-class Log(IdlStruct, typename="Log"):
-    stamp: Time
-    level: int8
-    name: str
-    msg: str
-    file: str
-    function: str
-    line: uint32
+__all__ = ["Log", "Time", "Twist", "Vector3"]

@@ -1,128 +1,131 @@
-import time
-import cv2
+"""MJPEG streaming generator for the web dashboard.
+
+Subscribes to the same Zenoh topics as ``display_video.py`` but yields
+multipart-encoded JPEG frames instead of opening OpenCV windows. The
+FastAPI endpoint ``/video_feed`` consumes this generator.
+"""
+
 import json
-import zenoh
+import time
+
+import cv2
 import numpy as np
+import zenoh
 
-conf = zenoh.Config()
-# conf.insert_json5("listen/endpoints", json.dumps(["tcp/0.0.0.0:7447"]))
-cams = {}
+from common.zenoh_args import parse_zenoh_args
 
-
-def frames_listener(sample):
-    chunks = str(sample.key_expr).split("/")
-    cam = chunks[-1]
-
-    if cam not in cams:
-        cams[cam] = {}
-
-    cams[cam]["img"] = bytes(sample.payload)
-    cams[cam]["img_time"] = time.time()
+DEFAULT_PREFIX = "demo/obj-detect"
+CAMERA_TIMEOUT_S = 2.0
+DETECTION_FRESHNESS_S = 0.2
+FRAME_LOOP_DELAY_S = 0.03
 
 
-def objects_listener(sample):
-    # print('[DEBUG] Received object: {} => {}'.format(sample.key_expr, sample.payload.decode("utf-8")))
-    chunks = str(sample.key_expr).split("/")
-    cam = chunks[-2]
-    obj = int(chunks[-1])
+def main() -> int:
+    """Entry point used when the file is run as a script for debugging.
 
-    if cam not in cams:
-        cams[cam] = {}
-    if "objects" not in cams[cam]:
-        cams[cam]["objects"] = {}
-    if obj not in cams[cam]["objects"]:
-        cams[cam]["objects"][obj] = {}
-
-    cams[cam]["objects"][obj] = json.loads(sample.payload.to_string())
-    cams[cam]["objects"][obj]["time"] = time.time()
-
-
-print("[INFO] Open zenoh session...")
-
-zenoh.init_log_from_env_or("error")
-z = zenoh.open(conf)
-
-z.declare_subscriber("demo/obj-detect/cams/*", frames_listener)
-
-z.declare_subscriber("demo/obj-detect/objects/*/*", objects_listener)
+    When ``main`` is imported by ``website/app.py``, only the
+    ``stream_first_camera`` generator below is used; the rest of this
+    function never executes.
+    """
+    args, conf, _ = parse_zenoh_args(
+        description="Banane v2.0 web MJPEG streamer",
+        default_prefix=DEFAULT_PREFIX,
+        include_delay=False,
+    )
+    for chunk in stream_first_camera(args.prefix, conf):
+        del chunk
+        break
+    return 0
 
 
-def display_video_stream():
+def stream_first_camera(prefix: str, conf):
+    """Yield one multipart JPEG frame per loop iteration.
+
+    Iterates over every camera, drops stale ones, and streams the
+    freshest frame for each camera in turn.
+    """
+    cams: dict = {}
+
+    def frames_listener(sample):
+        cam = str(sample.key_expr).split("/")[-1]
+        cams.setdefault(cam, {})
+        cams[cam]["img"] = bytes(sample.payload)
+        cams[cam]["img_time"] = time.time()
+
+    def objects_listener(sample):
+        chunks = str(sample.key_expr).split("/")
+        cam, obj = chunks[-2], int(chunks[-1])
+        cams.setdefault(cam, {}).setdefault("objects", {}).setdefault(obj, {})
+        cams[cam]["objects"][obj] = json.loads(sample.payload.to_string())
+        cams[cam]["objects"][obj]["time"] = time.time()
+
+    print("[INFO] Opening Zenoh session...")
+    zenoh.init_log_from_env_or("error")
+    z = zenoh.open(conf)
+
+    z.declare_subscriber(f"{prefix}/cams/*", frames_listener)
+    z.declare_subscriber(f"{prefix}/objects/*/*", objects_listener)
+
     while True:
         now = time.time()
         for cam in list(cams):
-            if "img_time" in cams[cam] and now - cams[cam]["img_time"] > 2.0:
+            if now - cams[cam].get("img_time", now) > CAMERA_TIMEOUT_S:
                 del cams[cam]
+
         for cam in list(cams):
-            if "img" in cams[cam]:
-                npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
-                matImage = cv2.imdecode(npImage, 1)
+            if "img" not in cams[cam]:
+                continue
+            matImage = cv2.imdecode(
+                np.frombuffer(cams[cam]["img"], dtype=np.uint8), 1
+            )
+            if matImage is None:
+                continue
 
-                if matImage is None:
+            for obj in cams[cam].get("objects", {}):
+                det = cams[cam]["objects"][obj]
+                if det["time"] <= now - DETECTION_FRESHNESS_S:
                     continue
-                # matImage = cv2.cvtColor(matImage, cv2.COLOR_RGB2BGR)
-                if "objects" in cams[cam]:
-                    for obj in list(cams[cam]["objects"]):
-                        if cams[cam]["objects"][obj]["time"] > now - 0.2:
-
-                            cv2.putText(
-                                matImage,
-                                cams[cam]["objects"][obj]["name"]
-                                + ", "
-                                + str(cams[cam]["objects"][obj]["confiance"])
-                                + "%",
-                                np.array(cams[cam]["objects"][obj]["box"][0]).astype(
-                                    int
-                                ),
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.6,
-                                (255, 0, 0),
-                                2,
-                            )
-                            cv2.polylines(
-                                matImage,
-                                [
-                                    np.array(cams[cam]["objects"][obj]["box"]).astype(
-                                        int
-                                    )
-                                ],
-                                True,
-                                (255, 0, 0),
-                                2,
-                            )
-                            cv2.putText(
-                                matImage,
-                                str(
-                                    np.array(
-                                        cams[cam]["objects"][obj]["normalized_center"]
-                                    )
-                                ),
-                                np.array(cams[cam]["objects"][obj]["center"]).astype(
-                                    int
-                                ),
-                                cv2.FONT_HERSHEY_SIMPLEX,
-                                0.6,
-                                (0, 255, 0),
-                                2,
-                            )
-                            cv2.circle(
-                                matImage,
-                                np.array(cams[cam]["objects"][obj]["center"]).astype(
-                                    int
-                                ),
-                                5,
-                                (0, 255, 0),
-                                -1,
-                            )
-
-                _, jpeg_buffer = cv2.imencode(".jpg", matImage)
-
-                yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n"
-                    + jpeg_buffer.tobytes()
-                    + b"\r\n"
+                box = np.array(det["box"]).astype(int)
+                label_pos = np.array(det["box"][0]).astype(int)
+                cv2.putText(
+                    matImage,
+                    f"{det['name']}, {det['confiance']}%",
+                    label_pos,
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (255, 0, 0),
+                    2,
                 )
-                break
+                cv2.polylines(matImage, [box], True, (255, 0, 0), 2)
+                cv2.putText(
+                    matImage,
+                    str(np.array(det["normalized_center"])),
+                    np.array(det["center"]).astype(int),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.circle(
+                    matImage,
+                    np.array(det["center"]).astype(int),
+                    5,
+                    (0, 255, 0),
+                    -1,
+                )
 
-        time.sleep(0.03)
+            _, jpeg_buffer = cv2.imencode(".jpg", matImage)
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n"
+                + jpeg_buffer.tobytes()
+                + b"\r\n"
+            )
+
+        time.sleep(FRAME_LOOP_DELAY_S)
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(main())

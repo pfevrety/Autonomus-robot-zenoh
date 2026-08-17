@@ -1,8 +1,34 @@
-import zenoh
-from common import *
+"""Autonomous aim loop.
+
+Subscribes to the Zenoh bus for:
+- ``robot/aimed``: detection of the currently-targeted object,
+- ``robot/state``: whether the robot should be searching (``True``) or idle (``False``),
+- ``robot/config/latency`` and ``robot/config/sensitivity``: tuning knobs exposed by the web UI.
+
+Drives the robot through a four-state machine (``AimState``) and publishes
+``Twist`` commands on ``rt/turtle1/cmd_vel`` together with a klaxon beep
+when the targeted object reaches the stop size.
+"""
+
+from __future__ import annotations
+
 import json
 import time
+
+import zenoh
+
 from aimstate import AimState
+from common.publish import publish_klaxon, publish_twist
+from common.topics import (
+    CMD_VEL,
+    KLAXON,
+    ROBOT_AIMED,
+    ROBOT_CONFIG_LATENCY,
+    ROBOT_CONFIG_SENSITIVITY,
+    ROBOT_FOUND_OBJECT,
+    ROBOT_STATE,
+)
+from common.types import Twist, Vector3
 
 HEIGHT_STOP_SIZE = 0.6
 WIDTH_STOP_SIZE = 0.4
@@ -19,9 +45,9 @@ DEFAULT_LATENCY = 2.0
 class Aim:
     def __init__(
         self,
-        cmd_vel_topic="rt/turtle1/cmd_vel",
-        linear_scale=DEFAULT_LINEAR_SCALE,
-        angular_scale=DEFAULT_ANGULAR_SCALE,
+        cmd_vel_topic: str = CMD_VEL,
+        linear_scale: float = DEFAULT_LINEAR_SCALE,
+        angular_scale: float = DEFAULT_ANGULAR_SCALE,
     ):
         self.cmd_vel_topic = cmd_vel_topic
         self.angular_scale = angular_scale
@@ -35,7 +61,8 @@ class Aim:
         self.beeping = False
         self.last_beeping_time = -BEEP_WAIT
         self.last_twist = Twist(
-            linear=Vector3(x=0.0, y=0.0, z=0.0), angular=Vector3(x=0.0, y=0.0, z=0.0)
+            linear=Vector3(x=0.0, y=0.0, z=0.0),
+            angular=Vector3(x=0.0, y=0.0, z=0.0),
         )
         self.execute_time = 0.0
         self.intensity = 0.0
@@ -48,34 +75,32 @@ class Aim:
 
         self.session = zenoh.open(conf)
 
-        self.sub = self.session.declare_subscriber("robot/aimed", self.box_callback)
+        self.sub = self.session.declare_subscriber(ROBOT_AIMED, self.box_callback)
         self.sub_state = self.session.declare_subscriber(
-            "robot/state", self.state_callback
+            ROBOT_STATE, self.state_callback
         )
         self.sub_lat = self.session.declare_subscriber(
-            "robot/config/latency", self.latency_callback
+            ROBOT_CONFIG_LATENCY, self.latency_callback
         )
         self.sub_sens = self.session.declare_subscriber(
-            "robot/config/sensitivity", self.sensitivity_callback
+            ROBOT_CONFIG_SENSITIVITY, self.sensitivity_callback
         )
 
     def state_callback(self, sample: zenoh.Sample):
-        if (
-            sample.payload.to_bytes()
-        ):  # check for true or false (technically checking if null or not, but it's the same)
+        if sample.payload.to_bytes():
             self.robot_state = AimState.SEARCHING
             self.last_moved_time = time.time()
         else:
             self.robot_state = AimState.STOPPED
-        print(f"État du robot mis à jour à distance: {self.robot_state}")
+        print(f"[INFO] Robot state updated remotely: {self.robot_state}")
 
     def latency_callback(self, sample: zenoh.Sample):
         self.latency = float(sample.payload.to_string()) / 1000
-        print(f"Latence mise à jour: {self.latency}s")
+        print(f"[INFO] Latency updated: {self.latency}s")
 
     def sensitivity_callback(self, sample: zenoh.Sample):
         self.angular_scale = float(sample.payload.to_string())
-        print(f"Angular Scale mis à jour: {self.angular_scale}")
+        print(f"[INFO] Angular scale updated: {self.angular_scale}")
 
     def box_callback(self, sample: zenoh.Sample):
         data = json.loads(sample.payload.to_bytes())
@@ -99,9 +124,9 @@ class Aim:
                 if not self.beeping:
                     self.beeping = True
                     self.last_beeping_time = time.time()
-                    self.session.put("rt/turtle1/klaxon", str(1).encode("utf-8"))
+                    publish_klaxon(self.session, sound_id=1, topic=KLAXON)
                     self.session.put(
-                        "robot/found_object", self.searched_object.encode()
+                        ROBOT_FOUND_OBJECT, self.searched_object.encode()
                     )
 
                     self.last_sent_twist_time = time.time()
@@ -121,9 +146,8 @@ class Aim:
 
         now = time.time()
 
-        if (
-            now - self.last_moved_time < self.latency
-        ):  # waiting for latency before moving again
+        if now - self.last_moved_time < self.latency:
+            # Honour the configured latency before issuing the next move.
             return
 
         if now - self.last_received_time > self.latency + SEARCH_AGAIN_TIME and (
@@ -151,7 +175,7 @@ class Aim:
     def do_twist(self, linear, angular, execute_time):
         self.execute_time = execute_time
         if not (angular == 0 and linear == 0):
-            print("\nmove order", linear, angular)
+            print(f"\n[INFO] Move order: linear={linear} angular={angular}")
 
         self.last_twist = Twist(
             linear=Vector3(x=float(linear), y=0.0, z=0.0),
@@ -163,17 +187,17 @@ class Aim:
         if now - self.last_moved_time < self.execute_time:
 
             if now - self.last_sent_twist_time > 0.05:
-                self.session.put(self.cmd_vel_topic, self.last_twist.serialize())
+                publish_twist(self.session, self.last_twist.linear.x, self.last_twist.angular.z, topic=self.cmd_vel_topic)
                 self.last_sent_twist_time = now
 
     def update(self):
-        # On vérifie si le temps d'attente du bip est écoulé
+        # Reset the klaxon beeping state once BEEP_WAIT has elapsed.
         if self.beeping and time.time() - self.last_beeping_time > BEEP_WAIT:
             self.beeping = False
 
         self.choose_move_order()
 
-        # On envoie l'ordre de mouvement (qui sera 0,0 si le robot est STOPPED)
+        # Publish the most recent move order (zero vector when the robot is STOPPED).
         self.send_twist()
 
         time.sleep(0.01)
@@ -187,13 +211,13 @@ class Aim:
 
 
 if __name__ == "__main__":
-    print("Starting Aim...")
+    print("[INFO] Starting aim loop...")
     aim = Aim()
     try:
-        print("Started Aim Successfully")
+        print("[INFO] Aim loop running")
         while True:
             aim.update()
     except KeyboardInterrupt:
-        print("Shutting down...")
+        print("[INFO] Shutting down...")
     finally:
         aim.destroy()

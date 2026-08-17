@@ -1,8 +1,31 @@
-# Byte-compiled / optimized / DLL files
+# Python build / cache artefacts
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / editor state
+.vscode/
+.idea/
+.DS_Store
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+
+# Local Zenoh router configuration files
+*.zenoh.json5
+
+# YOLO weights and other large model artefacts (download separately)
+models/
+
+# Logs
+*.log

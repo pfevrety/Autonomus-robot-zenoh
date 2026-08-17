@@ -1,0 +1,18 @@
+# --- Networking / pub-sub ----------------------------------------------------
+zenoh-python>=1.0
+
+# --- Computer vision & ML ---------------------------------------------------
+ultralytics>=8.0
+opencv-python>=4.8
+numpy>=1.24
+imutils>=0.5          # used by the USB webcam path of capture_video.py
+
+# --- Web dashboard ----------------------------------------------------------
+fastapi>=0.110
+uvicorn[standard]>=0.27
+
+# --- CDR serialisation shared by control + motor scripts -------------------
+pycdr2>=0.7
+
+# --- Dynamixel SDK (only used by src/motor/zdrive.py) -----------------------
+dynamixel-sdk>=3.7

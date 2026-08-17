@@ -1,120 +1,98 @@
+"""Dynamixel driver: bridges Zenoh Twist messages to the XM430 servomotor.
+
+Subscribes to ``rt/turtle1/cmd_vel`` (CDR-serialised ``Twist``) and
+``rt/turtle1/klaxon`` (UTF-8 sound ID) and writes the corresponding
+control-table registers on every loop iteration. Also publishes a
+heartbeat counter on ``rt/turtle1/heartbeat`` for diagnostics.
+"""
+
 import argparse
-from dataclasses import dataclass
-import time
-import io
-import zenoh
 import json
-from servo import *
-from pycdr2 import IdlStruct
-from pycdr2.types import int8, int32, uint32, float64
+import sys
+import time
 
+import zenoh
 
-@dataclass
-class Vector3(IdlStruct, typename="Vector3"):
-    x: float64
-    y: float64
-    z: float64
-
-
-@dataclass
-class Twist(IdlStruct, typename="Twist"):
-    linear: Vector3
-    angular: Vector3
-
+from common.zenoh_args import parse_zenoh_args
+from common.types import Twist, Vector3
+from servo import (
+    CMD_VELOCITY_ANGULAR_X,
+    CMD_VELOCITY_ANGULAR_Y,
+    CMD_VELOCITY_ANGULAR_Z,
+    CMD_VELOCITY_LINEAR_X,
+    CMD_VELOCITY_LINEAR_Z,
+    HEARTBEAT,
+    IMU_RE_CALIBRATION,
+    SOUND,
+    Servo,
+)
 
 DEVICENAME = "/dev/ttyACM0"
 PROTOCOL_VERSION = 2.0
 BAUDRATE = 115200
 MOTOR_ID = 200
 
-parser = argparse.ArgumentParser(
-    prog="drive_motors", description="zenoh drive_motors example"
-)
-parser.add_argument(
-    "-m", "--mode", type=str, choices=["peer", "client"], help="The zenoh session mode."
-)
-parser.add_argument(
-    "-e",
-    "--connect",
-    type=str,
-    metavar="ENDPOINT",
-    action="append",
-    help="zenoh endpoints to connect to.",
-)
-parser.add_argument(
-    "-l",
-    "--listen",
-    type=str,
-    metavar="ENDPOINT",
-    action="append",
-    help="zenoh endpoints to listen on.",
-)
-parser.add_argument(
-    "-d",
-    "--delay",
-    type=float,
-    default=0.01,
-    help="delay between each iteration in seconds",
-)
-parser.add_argument(
-    "-p", "--prefix", type=str, default="rt/turtle1", help="resources prefix"
-)
-parser.add_argument(
-    "-c", "--config", type=str, metavar="FILE", help="A zenoh configuration file."
-)
-
-args = parser.parse_args()
-
-count = 0
-cmd = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
-play_sound_flag = False  # Nouvelle variable
-conf = (
-    zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
-)
-if args.connect is not None:
-    conf.insert_json5("connect/endpoints", json.dumps(args.connect))
-if args.mode is not None:
-    conf.insert_json5("mode", json.dumps(args.mode))
-if args.listen is not None:
-    conf.insert_json5("listen/endpoints", json.dumps(args.listen))
+DEFAULT_DELAY = 0.01
+DEFAULT_PREFIX = "rt/turtle1"
+HEARTBEAT_ROLLOVER = 256  # heartbeat is a single byte on the bus.
 
 
-print("[INFO] Open zenoh session...")
-zenoh.init_log_from_env_or("error")
-z = zenoh.open(conf)
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        prog="zdrive",
+        description="Banane v2.0 Dynamixel driver",
+    )
+    parser.add_argument("-d", "--delay", type=float, default=DEFAULT_DELAY)
+    args, conf, _ = parse_zenoh_args(
+        description="Zenoh bridge to the XM430 servomotor",
+        default_prefix=DEFAULT_PREFIX,
+        argv=None,
+    )
 
-publ = z.declare_publisher("{}/heartbeat".format(args.prefix))
+    cmd = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
+    play_sound_flag = False
 
+    print("[INFO] Opening Zenoh session...")
+    zenoh.init_log_from_env_or("error")
+    z = zenoh.open(conf)
 
-def listener(sample):
-    global cmd
-    cmd = Twist.deserialize(bytes(sample.payload))
+    publ = z.declare_publisher(f"{args.prefix}/heartbeat")
 
+    def listener(sample):
+        nonlocal cmd
+        cmd = Twist.deserialize(bytes(sample.payload))
 
-def klaxon_listener(sample):
-    global play_sound_flag
-    print("[INFO] Zenoh command received: Play sound 3")
-    play_sound_flag = True
+    def klaxon_listener(sample):
+        nonlocal play_sound_flag
+        try:
+            sound_id = int(sample.payload.to_string())
+        except ValueError:
+            sound_id = 1
+        print(f"[INFO] Klaxon requested, sound ID {sound_id}")
+        # Store the requested sound ID for the next loop iteration to pick up.
+        klaxon_listener.sound_id = sound_id
+        play_sound_flag = True
 
+    klaxon_listener.sound_id = 1  # default sound
 
-print("[INFO] Connect to motor...")
-servo = Servo(DEVICENAME, PROTOCOL_VERSION, BAUDRATE, MOTOR_ID)
-if servo is None:
-    print("[WARN] Unable to connect to motor.")
-else:
+    print("[INFO] Connecting to motor...")
+    servo = Servo(DEVICENAME, PROTOCOL_VERSION, BAUDRATE, MOTOR_ID)
+
+    sub_cmd = z.declare_subscriber(f"{args.prefix}/cmd_vel", listener)
+    sub_klaxon = z.declare_subscriber(f"{args.prefix}/klaxon", klaxon_listener)
+
     servo.write1ByteTxRx(IMU_RE_CALIBRATION, 1)
-    sub_cmd = z.declare_subscriber("{}/cmd_vel".format(args.prefix), listener)
-    sub_klaxon = z.declare_subscriber("{}/klaxon".format(args.prefix), klaxon_listener)
 
-time.sleep(3.0)
-print("[INFO] Running!")
-while True:
-    if servo is not None:
+    time.sleep(3.0)
+    print("[INFO] Running!")
+
+    count = 0
+    while True:
         servo.write1ByteTxRx(HEARTBEAT, count)
 
         if play_sound_flag:
             servo.write1ByteTxRx(HEARTBEAT, 0)
-            servo.write4ByteTxRx(SOUND, 3)
+            servo.write4ByteTxRx(SOUND, klaxon_listener.sound_id)
             play_sound_flag = False
 
         servo.write4ByteTxRx(CMD_VELOCITY_LINEAR_X, int(cmd.linear.x))
@@ -122,12 +100,15 @@ while True:
         servo.write4ByteTxRx(CMD_VELOCITY_ANGULAR_X, int(cmd.angular.x))
         servo.write4ByteTxRx(CMD_VELOCITY_ANGULAR_Y, int(cmd.angular.y))
         servo.write4ByteTxRx(CMD_VELOCITY_ANGULAR_Z, int(cmd.angular.z))
-    cmd = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
 
-    publ.put(str(count))
+        publ.put(str(count))
 
-    count += 1
-    if count > 255:
-        count = 0
+        count = (count + 1) % HEARTBEAT_ROLLOVER
 
-    time.sleep(args.delay)
+        time.sleep(args.delay)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

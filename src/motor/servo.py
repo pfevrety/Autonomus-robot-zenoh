@@ -1,5 +1,13 @@
-from dynamixel_sdk import *
+"""Dynamixel XM430 protocol constants and thin serial wrapper.
 
+The control tables are exposed as module-level constants (matching the
+XM430-W350 datasheet) so that the rest of the codebase can reference them
+without scattering magic numbers.
+"""
+
+from dynamixel_sdk import COMM_SUCCESS, PacketHandler, PortHandler
+
+# --- Control-table addresses (XM430-W350) -----------------------------------
 MODEL_NUMBER = 0
 MODEL_INFORMATION = 2
 FIRMWARE_VERSION = 6
@@ -69,32 +77,40 @@ PROFILE_ACCELERATION_RIGHT = 178
 
 
 class Servo:
-    def __init__(self, devicename, protocol_version, baudrate, id):
-        self.id = id
+    """Thin wrapper around ``dynamixel_sdk`` for a single XM430 servo."""
+
+    def __init__(self, devicename: str, protocol_version: float, baudrate: int, dxl_id: int):
+        self.id = dxl_id
         self.portHandler = PortHandler(devicename)
         self.packetHandler = PacketHandler(protocol_version)
         if not self.portHandler.openPort():
-            raise Exception('Failed to open serial port')
+            raise RuntimeError(f"Failed to open serial port: {devicename}")
         if not self.portHandler.setBaudRate(baudrate):
-            raise Exception('Failed to change baudrate')
+            raise RuntimeError(f"Failed to set baudrate {baudrate} on {devicename}")
 
-    def write1ByteTxRx(self, addr, val):
-        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(self.portHandler, self.id, addr, val)
+    def write1ByteTxRx(self, addr: int, val: int) -> None:
+        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(
+            self.portHandler, self.id, addr, val
+        )
         if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+            print(self.packetHandler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
-            print("%s" % self.packetHandler.getRxPacketError(dxl_error))
+            print(self.packetHandler.getRxPacketError(dxl_error))
 
-    def write2ByteTxRx(self, addr, val):
-        dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(self.portHandler, self.id, addr, val)
+    def write2ByteTxRx(self, addr: int, val: int) -> None:
+        dxl_comm_result, dxl_error = self.packetHandler.write2ByteTxRx(
+            self.portHandler, self.id, addr, val
+        )
         if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+            print(self.packetHandler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
-            print("%s" % self.packetHandler.getRxPacketError(dxl_error))
+            print(self.packetHandler.getRxPacketError(dxl_error))
 
-    def write4ByteTxRx(self, addr, val):
-        dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(self.portHandler, self.id, addr, val)
+    def write4ByteTxRx(self, addr: int, val: int) -> None:
+        dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(
+            self.portHandler, self.id, addr, val
+        )
         if dxl_comm_result != COMM_SUCCESS:
-            print("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+            print(self.packetHandler.getTxRxResult(dxl_comm_result))
         elif dxl_error != 0:
-            print("%s" % self.packetHandler.getRxPacketError(dxl_error))
+            print(self.packetHandler.getRxPacketError(dxl_error))

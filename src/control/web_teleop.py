@@ -1,50 +1,47 @@
+"""HTTP-driven teleop bridge.
+
+The web UI (``website/app.py``) POSTs human-readable action strings
+(``move_up``, ``klaxon``, ...) to ``/command``; this module translates them
+into the same ``Twist`` / klaxon payloads as the keyboard teleop.
+"""
+
+from __future__ import annotations
+
 import zenoh
-from control.common import *
+
+from common.publish import publish_klaxon, publish_twist
+from common.topics import CMD_VEL, KLAXON
 
 
 class TeleopManager:
     def __init__(
         self,
-        cmd_vel_topic="rt/turtle1/cmd_vel",
-        rosout="rt/rosout",
-        linear_scale=20.0,
-        angular_scale=200.0,
+        cmd_vel_topic: str = CMD_VEL,
+        linear_scale: float = 20.0,
+        angular_scale: float = 200.0,
     ):
         self.cmd_vel_topic = cmd_vel_topic
-        self.klaxon_topic = cmd_vel_topic.replace("cmd_vel", "klaxon") 
-        self.rosout = rosout
+        self.klaxon_topic = KLAXON
         self.angular_scale = angular_scale
         self.linear_scale = linear_scale
-        
+
         conf = zenoh.Config()
         zenoh.init_log_from_env_or("error")
-        print("Openning session...")
+        print("[INFO] Opening Zenoh session...")
         self.session = zenoh.open(conf)
-        print("Subscriber on '{}'...".format(self.rosout))
 
-    def pub_twist(self, linear, angular):
-
-        print("Pub twist: {} - {}".format(linear, angular))
-        t = Twist(
-            linear=Vector3(x=float(linear), y=0.0, z=0.0),
-            angular=Vector3(x=0.0, y=0.0, z=float(angular)),
-        )
-        self.session.put(self.cmd_vel_topic, t.serialize())
-
-    def pub_bip(self, sound_id=1):
-        print(f"Pub sound ID {sound_id} via Zenoh sur {self.klaxon_topic}")
-        self.session.put(self.klaxon_topic, str(sound_id).encode('utf-8'))
-
-    def handle_command(self, action):
+    def handle_command(self, action: str) -> None:
         if action == "move_up":
-            self.pub_twist(-1.0 * self.linear_scale, 0.0)
+            publish_twist(self.session, -1.0 * self.linear_scale, 0.0, topic=self.cmd_vel_topic)
         elif action == "move_down":
-            self.pub_twist(1.0 * self.linear_scale, 0.0)
+            publish_twist(self.session, 1.0 * self.linear_scale, 0.0, topic=self.cmd_vel_topic)
         elif action == "move_left":
-            self.pub_twist(0.0, 1.0 * self.angular_scale)
+            publish_twist(self.session, 0.0, 1.0 * self.angular_scale, topic=self.cmd_vel_topic)
         elif action == "move_right":
-            self.pub_twist(0.0, -1.0 * self.angular_scale)
+            publish_twist(self.session, 0.0, -1.0 * self.angular_scale, topic=self.cmd_vel_topic)
         elif action == "stop":
-            self.pub_twist(0.0, 0.0)
+            publish_twist(self.session, 0.0, 0.0, topic=self.cmd_vel_topic)
         elif action == "bip":
-            self.pub_bip(3)
+            publish_klaxon(self.session, sound_id=3, topic=self.klaxon_topic)
+        else:
+            print(f"[WARN] Unknown teleop action: {action}")

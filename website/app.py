@@ -1,80 +1,83 @@
+"""FastAPI web dashboard for the Banane v2.0 robot.
+
+Exposes:
+
+- ``GET  /``             static dashboard (Tailwind + JS + custom CSS),
+- ``GET  /video_feed``   MJPEG stream from the latest camera frame,
+- ``GET  /stream``       Server-Sent Events for ``robot/aimed`` / found-object updates,
+- ``POST /command``      translate an action string into a Twist command,
+- ``POST /klaxon``       play a sound,
+- ``POST /add_aimed_object``     add an object to the robot's target queue,
+- ``POST /clear_aimed_objects``  clear the queue,
+- ``POST /update_latency``       tune the aim loop latency (ms),
+- ``POST /update_sensitivity``   tune the aim loop angular scale.
+
+The app owns its own ``Forwarder`` instance so detection forwarding,
+state publication, and the dashboard share the same Zenoh session.
+"""
+
+import asyncio
+import json
+import os
+import sys
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-import os
-import asyncio
-import sys
-import subprocess
-from contextlib import asynccontextmanager
-import json
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from video.forwarder import Forwarder
-
-from video.web_display_video import display_video_stream
 from control.web_teleop import TeleopManager
+from video.forwarder import Forwarder
+from video.web_display_video import stream_first_camera
 
-process_detection = None
-teleop = TeleopManager()
 ANGULAR_SCALE = 200
 LATENCY = 0.5
 
-# THE WEB APP IS THE SAME AS A FORWARDER. DO NOT LAUNCH BOTH FORWARDER AND THE WEB APP
+teleop = TeleopManager()
 forwarder = Forwarder()
 
-event_queue = asyncio.Queue()
-main_loop = None
+event_queue: asyncio.Queue = asyncio.Queue()
+main_loop: asyncio.AbstractEventLoop | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global process_detection
     global main_loop
     main_loop = asyncio.get_running_loop()
 
     def found_object_callback(sample):
         object_name = sample.payload.to_bytes().decode("utf-8", errors="ignore")
-        print(f"[INFO] Zenoh object found: {object_name}")
+        print(f"[INFO] Object found: {object_name}")
         main_loop.call_soon_threadsafe(
             event_queue.put_nowait, {"event": "found", "object_name": object_name}
         )
 
     def aimed_callback(sample):
-        print(f"[INFO] Zenoh aimed received: {sample.payload.to_string()}")
+        print(f"[INFO] Aimed sample received: {sample.payload.to_string()}")
         try:
             data = json.loads(sample.payload.to_bytes())
-
             x_position = data.get("normalized_center")[0]
-
             main_loop.call_soon_threadsafe(
                 event_queue.put_nowait, {"event": "aimed", "position": x_position}
             )
-        except Exception as e:
-            print(f"[ERROR] Erreur lecture Zenoh aimed: {e}")
+        except Exception as exc:
+            print(f"[ERROR] Failed to parse aimed payload: {exc}")
 
     sub_aimed = forwarder.session.declare_subscriber("robot/aimed", aimed_callback)
     sub_found = forwarder.session.declare_subscriber(
         "robot/found_object", found_object_callback
     )
 
-    # print("[INFO] subprocess detect_objects.py started...")
-    # process_detection = subprocess.Popen(
-    #     ["python", "./src/video/detect_objects.py", "-e", "tcp/127.0.0.1:7447"],
-    #     shell=False,
-    # )
-
     yield
 
-    print("\n[INFO] stopping server")
-
-    if process_detection:
-        process_detection.terminate()
-        print("\n[INFO] subprocess detect_objects.py terminated")
-        process_detection.wait()
+    print("[INFO] Stopping server")
+    sub_aimed.undeclare()
+    sub_found.undeclare()
+    forwarder.destroy()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -91,7 +94,8 @@ app.add_middleware(
 def video_feed():
     print("[INFO] Client connected to video feed")
     return StreamingResponse(
-        display_video_stream(), media_type="multipart/x-mixed-replace; boundary=frame"
+        stream_first_camera("demo/obj-detect", forwarder.session),
+        media_type="multipart/x-mixed-replace; boundary=frame",
     )
 
 
@@ -112,17 +116,13 @@ app.mount("/styles", StaticFiles(directory="website/styles"), name="style")
 async def add_aimed_object(request: Request):
     data = await request.json()
     object_name = data.get("object_name")
-
-    if object_name:
-
-        forwarder.add_aimed_object(object_name)
-
-        return {
-            "status": "success",
-            "message": f"Added {object_name} to aimed objects list",
-        }
-    else:
+    if not object_name:
         return {"status": "error", "message": "No object name provided"}
+    forwarder.add_aimed_object(object_name)
+    return {
+        "status": "success",
+        "message": f"Added {object_name} to aimed objects list",
+    }
 
 
 @app.post("/clear_aimed_objects")
@@ -133,38 +133,33 @@ async def clear_aimed_objects():
 
 @app.post("/update_latency")
 async def update_latency(request: Request):
-    global LATENCY
     data = await request.json()
-    LATENCY = data.get("latency")
-
-    if LATENCY is not None:
-        forwarder.session.put("robot/config/latency", str(LATENCY))
-        return {"status": "success", "latency": LATENCY}
-    return {"status": "error", "message": "Valeur manquante"}
+    latency_ms = data.get("latency")
+    if latency_ms is None:
+        return {"status": "error", "message": "Missing latency value"}
+    forwarder.session.put("robot/config/latency", str(latency_ms))
+    return {"status": "success", "latency": latency_ms}
 
 
 @app.post("/update_sensitivity")
 async def update_sensitivity(request: Request):
-    global ANGULAR_SCALE
     data = await request.json()
-    ANGULAR_SCALE = data.get("sensitivity")
-
-    if ANGULAR_SCALE is not None:
-        forwarder.session.put("robot/config/sensitivity", str(ANGULAR_SCALE))
-        return {"status": "success", "sensitivity": ANGULAR_SCALE}
-    return {"status": "error", "message": "Valeur manquante"}
+    sensitivity = data.get("sensitivity")
+    if sensitivity is None:
+        return {"status": "error", "message": "Missing sensitivity value"}
+    forwarder.session.put("robot/config/sensitivity", str(sensitivity))
+    return {"status": "success", "sensitivity": sensitivity}
 
 
 @app.post("/klaxon")
 async def activate_klaxon():
-    print("[INFO] Klaxon command via Zenoh requested")
-    teleop.pub_bip(1)
+    print("[INFO] Klaxon requested via web")
+    teleop.handle_command("bip")
     return {"status": "success", "action": "klaxon"}
 
 
 @app.get("/stream")
 async def stream_events():
-
     async def event_generator():
         while True:
             data = await event_queue.get()
@@ -179,5 +174,5 @@ def serve_home():
 
 
 if __name__ == "__main__":
-    print("[INFO] starting web server on http://localhost:8000")
+    print("[INFO] Starting web server on http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)

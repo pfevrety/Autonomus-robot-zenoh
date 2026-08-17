@@ -1,129 +1,89 @@
-import argparse
+"""OpenCV debug viewer for camera frames and detected objects.
+
+Subscribes to the ``demo/obj-detect`` namespace and opens one ``cv2``
+window per camera, drawing the latest detection overlays on top of each
+frame. Intended for development; the web UI uses ``web_display_video.py``
+instead.
+"""
+
+import json
+import sys
 import time
+
 import cv2
-import json
-import zenoh
 import numpy as np
-import json
 
-parser = argparse.ArgumentParser(
-    prog="display_video", description="zenoh object detection example display"
-)
-parser.add_argument(
-    "-m", "--mode", type=str, choices=["peer", "client"], help="The zenoh session mode."
-)
-parser.add_argument(
-    "-e",
-    "--connect",
-    type=str,
-    metavar="ENDPOINT",
-    action="append",
-    help="zenoh endpoints to connect to.",
-)
-parser.add_argument(
-    "-l",
-    "--listen",
-    type=str,
-    metavar="ENDPOINT",
-    action="append",
-    help="zenoh endpoints to listen on.",
-)
-parser.add_argument(
-    "-d",
-    "--delay",
-    type=float,
-    default=0.05,
-    help="delay between each frame in seconds",
-)
-parser.add_argument(
-    "-p", "--prefix", type=str, default="demo/obj-detect", help="resources prefix"
-)
-parser.add_argument(
-    "-c", "--config", type=str, metavar="FILE", help="A zenoh configuration file."
-)
+from common.zenoh_args import parse_zenoh_args
 
-args = parser.parse_args()
-conf = (
-    zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
-)
-if args.mode is not None:
-    conf.insert_json5("mode", json.dumps(args.mode))
-if args.connect is not None:
-    conf.insert_json5("connect/endpoints", json.dumps(args.connect))
-if args.listen is not None:
-    conf.insert_json5("listen/endpoints", json.dumps(args.listen))
-
-cams = {}
+DEFAULT_PREFIX = "demo/obj-detect"
+DEFAULT_DELAY = 0.05
+DETECTION_FRESHNESS_S = 0.2
 
 
-def frames_listener(sample):
-    # print('[DEBUG] Received frame: {}'.format(sample.key_expr))
-    chunks = str(sample.key_expr).split("/")
-    cam = chunks[-1]
+def main() -> int:
+    args, conf, _ = parse_zenoh_args(
+        description="Banane v2.0 debug viewer",
+        default_prefix=DEFAULT_PREFIX,
+    )
 
-    if cam not in cams:
-        cams[cam] = {}
-    cams[cam]["img"] = bytes(sample.payload)
+    cams: dict = {}
+
+    def frames_listener(sample):
+        cam = str(sample.key_expr).split("/")[-1]
+        cams.setdefault(cam, {})["img"] = bytes(sample.payload)
+
+    def objects_listener(sample):
+        chunks = str(sample.key_expr).split("/")
+        cam, obj = chunks[-2], int(chunks[-1])
+        cams.setdefault(cam, {}).setdefault("objects", {}).setdefault(obj, {})
+        cams[cam]["objects"][obj] = json.loads(sample.payload.to_string())
+        cams[cam]["objects"][obj]["time"] = time.time()
+
+    print("[INFO] Opening Zenoh session...")
+    zenoh.init_log_from_env_or("error")
+    z = zenoh.open(conf)
+
+    z.declare_subscriber(f"{args.prefix}/cams/*", frames_listener)
+    z.declare_subscriber(f"{args.prefix}/objects/*/*", objects_listener)
+
+    try:
+        while True:
+            now = time.time()
+            for cam in list(cams):
+                if "img" not in cams[cam]:
+                    continue
+                matImage = cv2.imdecode(
+                    np.frombuffer(cams[cam]["img"], dtype=np.uint8), 1
+                )
+                if matImage is None:
+                    continue
+                for obj in cams[cam].get("objects", {}):
+                    det = cams[cam]["objects"][obj]
+                    if det["time"] <= now - DETECTION_FRESHNESS_S:
+                        continue
+                    box = np.array(det["box"]).astype(int)
+                    label_pos = np.array(det["box"][0]).astype(int)
+                    cv2.putText(
+                        matImage,
+                        det["name"],
+                        label_pos,
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.6,
+                        (255, 0, 0),
+                        2,
+                    )
+                    cv2.polylines(matImage, [box], True, (255, 0, 0), 2)
+                cv2.imshow(f"Cam #{cam}", matImage)
+            cv2.waitKey(1)
+            time.sleep(args.delay)
+    except KeyboardInterrupt:
+        print("[INFO] Interrupted, shutting down...")
+    finally:
+        cv2.destroyAllWindows()
+        z.close()
+
+    return 0
 
 
-def objects_listener(sample):
-    # print('[DEBUG] Received object: {} => {}'.format(sample.key_expr, sample.payload.decode("utf-8")))
-    chunks = str(sample.key_expr).split("/")
-    cam = chunks[-2]
-    obj = int(chunks[-1])
-
-    if cam not in cams:
-        cams[cam] = {}
-    if "objects" not in cams[cam]:
-        cams[cam]["objects"] = {}
-    if obj not in cams[cam]["objects"]:
-        cams[cam]["objects"][obj] = {}
-
-    cams[cam]["objects"][obj] = json.loads(sample.payload.to_string())
-    cams[cam]["objects"][obj]["time"] = time.time()
-
-
-print("[INFO] Open zenoh session...")
-
-zenoh.init_log_from_env_or("error")
-z = zenoh.open(conf)
-
-sub = z.declare_subscriber(args.prefix + "/cams/*", frames_listener)
-sub2 = z.declare_subscriber(args.prefix + "/objects/*/*", objects_listener)
-
-while True:
-    now = time.time()
-    for cam in list(cams):
-        if "img" in cams[cam]:
-            npImage = np.frombuffer(cams[cam]["img"], dtype=np.uint8)
-            matImage = cv2.imdecode(npImage, 1)
-            if "objects" in cams[cam]:
-                print(len(cams[cam]["objects"]))
-                for obj in cams[cam]["objects"]:
-
-                    if cams[cam]["objects"][obj]["time"] > now - 0.2:
-                        cv2.putText(
-                            matImage,
-                            cams[cam]["objects"][obj]["name"],
-                            np.array(cams[cam]["objects"][obj]["box"][0]).astype(int),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.6,
-                            (255, 0, 0),
-                            2,
-                        )
-                        cv2.polylines(
-                            matImage,
-                            [np.array(cams[cam]["objects"][obj]["box"]).astype(int)],
-                            True,
-                            (255, 0, 0),
-                            2,
-                        )
-
-                # pas d'objet
-            cv2.imshow("Cam #" + cam, matImage)
-
-    key = cv2.waitKey(1) & 0xFF
-    time.sleep(args.delay)
-
-vs.stop()
-z.close()
+if __name__ == "__main__":
+    sys.exit(main())
